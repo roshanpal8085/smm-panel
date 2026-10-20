@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SMM PRIME | #1 Cheapest & Fastest SMM Panel{% endblock %}</title>
+    <meta name="description" content="Boost your social media presence with the fastest, cheapest, and most reliable SMM Panel. Instant delivery for Instagram, YouTube, TikTok, Telegram and more.">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            950: '#010409',
+                            900: '#0d1117',
+                            850: '#11161d',
+                            800: '#161b22',
+                            700: '#21262d',
+                            600: '#30363d',
+                            500: '#484f58',
+                            400: '#8b949e'
+                        },
+                        brand: {
+                            primary: '#238636',
+                            primaryHover: '#2ea043',
+                            accent: '#58a6ff',
+                            purple: '#8957e5',
+                            success: '#3fb950',
+                            danger: '#f85149',
+                            warning: '#d29922'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', '"Noto Sans"', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', '"SF Mono"', 'Menlo', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+
+        /* GitHub Dark Themed Classes */
+        .glass-panel {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+        }
+        .glass-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+        }
+        .gradient-text {
+            color: #58a6ff;
+        }
+
+        /* GitHub Buttons */
+        .btn-git-primary {
+            background-color: #238636;
+            color: #ffffff;
+            border: 1px solid rgba(240, 246, 252, 0.1);
+            box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
+            transition: all 0.15s ease;
+        }
+        .btn-git-primary:hover {
+            background-color: #2ea043;
+            color: #ffffff;
+        }
+
+        .btn-git-secondary {
+            background-color: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
+            transition: all 0.15s ease;
+        }
+        .btn-git-secondary:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+            color: #f0f6fc;
+        }
+
+        /* ── GitHub Primer Component System ───────────────── */
+
+        /* Input & Textarea */
+        .gh-input,
+        input:not([type=checkbox]):not([type=radio]),
+        textarea {
+            width: 100%;
+            background-color: #0d1117;
+            border: 1.5px solid #484f58;
+            border-radius: 6px;
+            color: #c9d1d9;
+            padding: 6px 12px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .gh-input:focus,
+        input:not([type=checkbox]):not([type=radio]):focus,
+        textarea:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(31,111,235,0.25);
+        }
+        .gh-input::placeholder, input::placeholder, textarea::placeholder { color: #484f58; }
+
+        /* Select Dropdowns & Options */
+        select,
+        .gh-select {
+            width: 100%;
+            background-color: #161b22 !important;
+            border: 1.5px solid #484f58 !important;
+            border-radius: 6px !important;
+            color: #f0f6fc !important;
+            padding: 7px 34px 7px 12px !important;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238b949e' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 10px center !important;
+            background-repeat: no-repeat !important;
+            background-size: 16px 16px !important;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        select:hover,
+        .gh-select:hover {
+            border-color: #8b949e !important;
+            background-color: #1c2128 !important;
+        }
+        select:focus,
+        .gh-select:focus {
+            border-color: #58a6ff !important;
+            box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.3) !important;
+            background-color: #161b22 !important;
+        }
+        select option {
+            background-color: #161b22;
+            color: #f0f6fc;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        /* Checkboxes & Radios */
+        input[type=checkbox],
+        input[type=radio] {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1.5px solid #484f58;
+            background-color: #0d1117;
+            accent-color: #238636;
+            cursor: pointer;
+            display: inline-block;
+            vertical-align: middle;
+            transition: border-color 0.15s;
+        }
+        input[type=radio] {
+            border-radius: 50%;
+        }
+        input[type=checkbox]:hover,
+        input[type=radio]:hover {
+            border-color: #58a6ff;
+        }
+        input[type=checkbox]:checked,
+        input[type=radio]:checked {
+            border-color: #2ea043;
+            background-color: #238636;
+        }
+
+        /* Boxes */
+        .gh-box { background-color: #0d1117; border: 1px solid #30363d; border-radius: 6px; }
+        .gh-box-subtle { background-color: #161b22; border: 1px solid #30363d; border-radius: 6px; }
+        .gh-box-header {
+            background-color: #161b22; border-bottom: 1px solid #30363d;
+            padding: 10px 16px; font-weight: 600; font-size: 13px; color: #f0f6fc;
+            border-top-left-radius: 6px; border-top-right-radius: 6px;
+        }
+        .gh-box-row { padding: 10px 16px; }
+        .gh-box-row:hover { background-color: rgba(33,38,45,0.5); }
+
+        /* Buttons */
+        .gh-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 5px 14px; font-size: 12px; font-weight: 500; line-height: 20px;
+            border-radius: 6px; border: 1px solid #30363d; background-color: #21262d;
+            color: #c9d1d9; box-shadow: 0 1px 0 rgba(27,31,36,0.1); cursor: pointer;
+            text-decoration: none; transition: 0.15s; white-space: nowrap;
+        }
+        .gh-btn:hover { background-color: #30363d; border-color: #8b949e; color: #f0f6fc; }
+
+        .gh-btn-primary {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 5px 16px; font-size: 12px; font-weight: 500; line-height: 20px;
+            border-radius: 6px; border: 1px solid rgba(240,246,252,0.1);
+            background-color: #238636; color: #fff; cursor: pointer;
+            text-decoration: none; transition: 0.15s; white-space: nowrap;
+        }
+        .gh-btn-primary:hover { background-color: #2ea043; }
+        .gh-btn-primary:disabled, .gh-btn-primary[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+        .gh-btn-danger {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 5px 14px; font-size: 12px; font-weight: 500; border-radius: 6px;
+            border: 1px solid rgba(248,81,73,0.4); background-color: rgba(218,54,51,0.15);
+            color: #f85149; cursor: pointer; text-decoration: none; transition: 0.15s; white-space: nowrap;
+        }
+        .gh-btn-danger:hover { background-color: #da3633; color: #fff; border-color: #da3633; }
+
+        /* Badges */
+        .gh-badge-open {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 2em; font-size: 11px; font-weight: 600;
+            background-color: rgba(46,160,67,0.15); color: #3fb950;
+            border: 1px solid rgba(46,160,67,0.4); white-space: nowrap;
+        }
+        .gh-badge-closed {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 2em; font-size: 11px; font-weight: 600;
+            background-color: rgba(248,81,73,0.12); color: #f85149;
+            border: 1px solid rgba(248,81,73,0.3); white-space: nowrap;
+        }
+        .gh-badge-merged {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 2em; font-size: 11px; font-weight: 600;
+            background-color: rgba(163,113,247,0.15); color: #a371f7;
+            border: 1px solid rgba(163,113,247,0.3); white-space: nowrap;
+        }
+        .gh-badge-draft {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 2em; font-size: 11px; font-weight: 600;
+            background-color: rgba(139,148,158,0.15); color: #8b949e;
+            border: 1px solid rgba(139,148,158,0.3); white-space: nowrap;
+        }
+
+        /* Counter pill */
+        .gh-counter {
+            display: inline-block; padding: 1px 7px; font-size: 11px;
+            font-weight: 500; line-height: 18px; border-radius: 2em;
+            background-color: rgba(110,118,129,0.2); border: 1px solid rgba(110,118,129,0.25);
+            color: #c9d1d9;
+        }
+
+        /* GitHub Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #58a6ff;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-[#0d1117] text-[#c9d1d9]" x-data="{ mobileMenu: false }">
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+    {% block navbar %}
+    <!-- Public Header / Navbar (GitHub Theme) -->
+    <header class="sticky top-0 z-40 bg-[#161b22] border-b border-[#30363d] transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-9 h-9 rounded-xl bg-[#238636] flex items-center justify-center text-white shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-bolt text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-tight text-[#f0f6fc] flex items-center gap-1">
+                        SMM<span class="text-[#58a6ff]">PRIME</span>
+                    </span>
+                    <span class="block text-[9px] font-semibold tracking-widest uppercase text-[#8b949e] -mt-1">Pro Reseller Panel</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-7 text-sm font-semibold">
+                <a href="/" class="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors">Home</a>
+                <a href="/services-list" class="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors">Services</a>
+                <a href="/api-docs" class="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors">API Docs</a>
+                <a href="/#faq" class="text-[#c9d1d9] hover:text-[#58a6ff] transition-colors">FAQ</a>
+            </nav>
+
+            <!-- User Auth Actions -->
+            <div class="hidden md:flex items-center gap-3">
+                {% if user %}
+                    <a href="/dashboard" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] transition-all">
+                        <div class="w-6 h-6 rounded-md bg-[#238636]/20 text-[#3fb950] flex items-center justify-center font-bold text-xs font-mono">
+                            {{ user.username[0]|upper }}
+                        </div>
+                        <div class="text-left text-xs">
+                            <span class="block font-semibold text-[#f0f6fc] leading-tight">{{ user.username }}</span>
+                            <span class="block text-[11px] font-bold text-[#3fb950] font-mono leading-tight">₹{{ user.balance }}</span>
+                        </div>
+                    </a>
+                    <a href="/dashboard" class="px-4 py-1.5 rounded-lg btn-git-primary text-xs font-semibold flex items-center gap-1.5">
+                        Dashboard <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                {% else %}
+                    <a href="/login" class="text-xs font-semibold text-[#c9d1d9] hover:text-white px-3 py-1.5 rounded-lg btn-git-secondary">
+                        Sign In
+                    </a>
+                    <a href="/register" class="px-4 py-1.5 rounded-lg btn-git-primary text-xs font-semibold flex items-center gap-1.5">
+                        Get Started <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile Hamburger -->
+            <button @click="mobileMenu = !mobileMenu" class="md:hidden p-2 text-[#8b949e] hover:text-[#f0f6fc] focus:outline-none">
+                <i :class="mobileMenu ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'" class="text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Drawer -->
+        <div x-show="mobileMenu" x-cloak class="md:hidden bg-[#161b22] border-b border-[#30363d] px-4 pt-3 pb-5 space-y-2 text-sm">
+            <a href="/" class="block px-3 py-2 text-[#c9d1d9] hover:text-white font-medium rounded-lg hover:bg-[#21262d]">Home</a>
+            <a href="/services-list" class="block px-3 py-2 text-[#c9d1d9] hover:text-white font-medium rounded-lg hover:bg-[#21262d]">Services</a>
+            <a href="/api-docs" class="block px-3 py-2 text-[#c9d1d9] hover:text-white font-medium rounded-lg hover:bg-[#21262d]">API Docs</a>
+            <a href="/#faq" class="block px-3 py-2 text-[#c9d1d9] hover:text-white font-medium rounded-lg hover:bg-[#21262d]">FAQ</a>
+            <div class="pt-2 border-t border-[#30363d] flex flex-col gap-2">
+                {% if user %}
+                    <a href="/dashboard" class="w-full text-center py-2 rounded-lg btn-git-primary text-xs font-semibold">Dashboard</a>
+                {% else %}
+                    <a href="/login" class="w-full text-center py-2 text-[#c9d1d9] font-semibold text-xs btn-git-secondary rounded-lg">Sign In</a>
+                    <a href="/register" class="w-full text-center py-2 rounded-lg btn-git-primary text-xs font-semibold">Create Account</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    {% endblock %}
+
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block footer %}
+    <!-- Public Footer (GitHub Theme) -->
+    <footer class="border-t border-[#30363d] bg-[#161b22] pt-14 pb-10 mt-auto text-xs text-[#8b949e]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="space-y-3 md:col-span-1">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-[#238636] flex items-center justify-center text-white font-bold">
+                            <i class="fa-solid fa-bolt text-xs"></i>
+                        </div>
+                        <span class="text-lg font-extrabold text-[#f0f6fc]">SMM<span class="text-[#58a6ff]">PRIME</span></span>
+                    </div>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        The world's premier social media growth provider. Ultra-fast delivery, automated API order routing, and 24/7 dedicated support.
+                    </p>
+                    <div class="flex items-center gap-2.5 text-[#8b949e]">
+                        <a href="#" class="w-7 h-7 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center hover:text-[#58a6ff] hover:bg-[#30363d] transition-colors"><i class="fa-brands fa-telegram text-xs"></i></a>
+                        <a href="#" class="w-7 h-7 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center hover:text-[#58a6ff] hover:bg-[#30363d] transition-colors"><i class="fa-brands fa-instagram text-xs"></i></a>
+                        <a href="#" class="w-7 h-7 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center hover:text-[#58a6ff] hover:bg-[#30363d] transition-colors"><i class="fa-brands fa-twitter text-xs"></i></a>
+                        <a href="#" class="w-7 h-7 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center hover:text-[#3fb950] hover:bg-[#30363d] transition-colors"><i class="fa-brands fa-whatsapp text-xs"></i></a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider mb-3">Quick Links</h4>
+                    <ul class="space-y-2 text-xs text-[#8b949e]">
+                        <li><a href="/" class="hover:text-[#58a6ff] transition-colors">Home</a></li>
+                        <li><a href="/services-list" class="hover:text-[#58a6ff] transition-colors">All Services & Pricing</a></li>
+                        <li><a href="/login" class="hover:text-[#58a6ff] transition-colors">User Login</a></li>
+                        <li><a href="/register" class="hover:text-[#58a6ff] transition-colors">Register Account</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider mb-3">Developers & API</h4>
+                    <ul class="space-y-2 text-xs text-[#8b949e]">
+                        <li><a href="/api-docs" class="hover:text-[#58a6ff] transition-colors">Reseller API v2 Docs</a></li>
+                        <li><a href="/api-docs#add-order" class="hover:text-[#58a6ff] transition-colors">Add Order API</a></li>
+                        <li><a href="/api-docs#check-status" class="hover:text-[#58a6ff] transition-colors">Order Status API</a></li>
+                        <li><a href="/api-docs#balance" class="hover:text-[#58a6ff] transition-colors">Check Balance API</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider mb-3">Payment Methods</h4>
+                    <p class="text-xs text-[#8b949e] mb-3">Instant deposit credits via UPI, QR Code, IMPS, Cards & Crypto.</p>
+                    <div class="flex flex-wrap gap-1.5 text-[11px] font-semibold text-[#c9d1d9]">
+                        <span class="px-2 py-1 rounded-md bg-[#21262d] border border-[#30363d] flex items-center gap-1"><i class="fa-solid fa-qrcode text-[#58a6ff]"></i> UPI QR</span>
+                        <span class="px-2 py-1 rounded-md bg-[#21262d] border border-[#30363d] flex items-center gap-1"><i class="fa-brands fa-google-pay text-[#58a6ff]"></i> GPay / PhonePe</span>
+                        <span class="px-2 py-1 rounded-md bg-[#21262d] border border-[#30363d] flex items-center gap-1"><i class="fa-solid fa-building-columns text-[#3fb950]"></i> Bank IMPS</span>
+                        <span class="px-2 py-1 rounded-md bg-[#21262d] border border-[#30363d] flex items-center gap-1"><i class="fa-brands fa-bitcoin text-[#d29922]"></i> Crypto USDT</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-[#30363d] flex flex-col md:flex-row items-center justify-between text-[11px] text-[#8b949e] gap-3">
+                <p>&copy; 2026 SMM PRIME. All rights reserved. Built for high-volume performance & automated reliability.</p>
+                <div class="flex items-center gap-4">
+                    <span class="flex items-center gap-1.5 text-[#3fb950] font-medium font-mono">
+                        <span class="w-2 h-2 rounded-full bg-[#238636] animate-pulse"></span>
+                        Provider API Online (99.9%)
+                    </span>
+                    <a href="/api-docs" class="hover:text-[#58a6ff]">API Documentation</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+
+    <!-- Global Toast Script -->
+    <script>
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const borderCol = type === 'success' ? '#2ea043' : type === 'error' ? '#da3633' : '#1f6feb';
+            const iconCol = type === 'success' ? '#3fb950' : type === 'error' ? '#f85149' : '#58a6ff';
+            const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info';
+
+            toast.className = 'pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-xs font-medium bg-[#161b22] border shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 text-[#f0f6fc]';
+            toast.style.borderColor = borderCol;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-sm" style="color: ${iconCol}"></i><span class="flex-1">${message}</span>`;
+            
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

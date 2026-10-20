@@ -1,0 +1,207 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Services & Pricing | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    services: [],
+    categories: [],
+    selectedCategory: 'All',
+    search: '',
+    loading: true,
+    selectedPlatform: 'all',
+
+    platforms: [
+        { id: 'all', name: 'All', icon: 'fa-solid fa-layer-group', colorClass: 'text-[#8b949e]', activeColor: 'text-[#58a6ff]', keywords: [] },
+        { id: 'youtube', name: 'YouTube', icon: 'fa-brands fa-youtube', colorClass: 'text-[#f85149]', activeColor: 'text-[#f85149]', keywords: ['youtube', 'yt ', 'yt-', 'yt:'] },
+        { id: 'facebook', name: 'Facebook', icon: 'fa-brands fa-facebook', colorClass: 'text-[#58a6ff]', activeColor: 'text-[#58a6ff]', keywords: ['facebook', 'fb ', 'fb-', 'fb:'] },
+        { id: 'instagram', name: 'Instagram', icon: 'fa-brands fa-instagram', colorClass: 'text-[#db61a2]', activeColor: 'text-[#db61a2]', keywords: ['instagram', 'ig ', 'ig-', 'ig:'] },
+        { id: 'tiktok', name: 'TikTok', icon: 'fa-brands fa-tiktok', colorClass: 'text-[#f0f6fc]', activeColor: 'text-[#f0f6fc]', keywords: ['tiktok', 'tik tok'] },
+        { id: 'telegram', name: 'Telegram', icon: 'fa-brands fa-telegram', colorClass: 'text-[#58a6ff]', activeColor: 'text-[#58a6ff]', keywords: ['telegram', 'tg ', 'tg-', 'tg:'] },
+        { id: 'spotify', name: 'Spotify', icon: 'fa-brands fa-spotify', colorClass: 'text-[#3fb950]', activeColor: 'text-[#3fb950]', keywords: ['spotify'] },
+        { id: 'threads', name: 'Threads', icon: 'fa-brands fa-threads', colorClass: 'text-[#c9d1d9]', activeColor: 'text-[#c9d1d9]', keywords: ['threads'] },
+        { id: 'twitter', name: 'Twitter / X', icon: 'fa-brands fa-x-twitter', colorClass: 'text-[#f0f6fc]', activeColor: 'text-[#f0f6fc]', keywords: ['twitter', ' x ', 'x.com', 'x -', 'tweet', '𝕩'] },
+        { id: 'linkedin', name: 'LinkedIn', icon: 'fa-brands fa-linkedin', colorClass: 'text-[#58a6ff]', activeColor: 'text-[#58a6ff]', keywords: ['linkedin'] },
+        { id: 'kick', name: 'Kick', icon: 'fa-solid fa-k', colorClass: 'text-[#3fb950]', activeColor: 'text-[#3fb950]', keywords: ['kick'] },
+        { id: 'other', name: 'Other', icon: 'fa-solid fa-ellipsis', colorClass: 'text-[#8b949e]', activeColor: 'text-[#c9d1d9]', keywords: [] }
+    ],
+
+    matchesPlatform(catName, platformId) {
+        if (!catName) return false;
+        if (platformId === 'all') return true;
+        const cl = catName.toLowerCase();
+        const mainKeywords = [
+            'youtube', 'yt ', 'yt-', 'yt:', 'facebook', 'fb ', 'fb-', 'fb:',
+            'instagram', 'ig ', 'ig-', 'ig:', 'tiktok', 'tik tok',
+            'telegram', 'tg ', 'tg-', 'tg:', 'spotify', 'threads',
+            'twitter', ' x ', 'x.com', 'x -', 'tweet', '𝕩', 'linkedin', 'kick'
+        ];
+        if (platformId === 'other') {
+            return !mainKeywords.some(k => cl.includes(k));
+        }
+        const p = this.platforms.find(x => x.id === platformId);
+        if (!p || !p.keywords || p.keywords.length === 0) return true;
+        return p.keywords.some(k => cl.includes(k));
+    },
+
+    get filteredCategories() {
+        const cats = this.categories.filter(c => c === 'All' || this.matchesPlatform(c, this.selectedPlatform));
+        return cats;
+    },
+
+    selectPlatform(platId) {
+        this.selectedPlatform = platId;
+        this.selectedCategory = 'All';
+    },
+
+    async init() {
+        try {
+            const res = await fetch('/services');
+            const data = await res.json();
+            if (data.success) {
+                this.services = data.services;
+                const cats = new Set(this.services.map(s => s.category));
+                this.categories = ['All', ...Array.from(cats).sort()];
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    get filteredServices() {
+        return this.services.filter(s => {
+            const matchesPlat = this.matchesPlatform(s.category, this.selectedPlatform);
+            if (!matchesPlat) return false;
+            const matchesCat = this.selectedCategory === 'All' || s.category === this.selectedCategory;
+            const matchesSearch = !this.search || 
+                s.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                s.id.toString().includes(this.search) ||
+                s.category.toLowerCase().includes(this.search.toLowerCase());
+            return matchesCat && matchesSearch;
+        });
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Dashboard</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc]">Services</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Services & Pricing</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="gh-counter text-xs">
+                <span x-text="filteredServices.length"></span> services available
+            </span>
+        </div>
+    </div>
+
+    <!-- Platform Chips & Filter Box -->
+    <div class="gh-box p-3.5 space-y-3">
+        <!-- Platform grid (Option Boxes with Check Indicator) -->
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+            <template x-for="plat in platforms" :key="plat.id">
+                <button type="button" 
+                        @click="selectPlatform(plat.id)"
+                        class="flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-md border text-xs font-medium transition-all text-left shadow-sm"
+                        :class="selectedPlatform === plat.id 
+                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] font-bold' 
+                            : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'">
+                    <div class="flex items-center gap-1.5 truncate">
+                        <i :class="plat.icon + ' ' + (selectedPlatform === plat.id ? 'text-[#58a6ff]' : plat.colorClass) + ' text-xs shrink-0'"></i>
+                        <span class="truncate" x-text="plat.name"></span>
+                    </div>
+                    <span class="w-3 h-3 rounded border flex items-center justify-center shrink-0 transition-colors"
+                          :class="selectedPlatform === plat.id 
+                              ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                              : 'border-[#484f58] bg-[#0d1117]'">
+                        <i x-show="selectedPlatform === plat.id" class="fa-solid fa-check text-[7px]"></i>
+                    </span>
+                </button>
+            </template>
+        </div>
+
+        <!-- Filter dropdown & search -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2.5 border-t border-[#21262d]">
+            <div class="w-full md:w-72">
+                <select x-model="selectedCategory" class="gh-input text-xs py-1.5">
+                    <template x-for="cat in filteredCategories" :key="cat">
+                        <option :value="cat" x-text="cat"></option>
+                    </template>
+                </select>
+            </div>
+
+            <div class="relative w-full md:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                <input type="text" x-model="search" placeholder="Filter packages by name, ID, or tag..." class="gh-input text-xs py-1.5 pl-8 pr-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Table Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-4 w-16 font-mono">ID</th>
+                        <th class="py-2.5 px-4">Package Name</th>
+                        <th class="py-2.5 px-4 w-32 font-mono">Rate / 1K</th>
+                        <th class="py-2.5 px-4 w-32 font-mono">Limits</th>
+                        <th class="py-2.5 px-4 w-24 text-center">Refill</th>
+                        <th class="py-2.5 px-4 w-24 text-center">Cancel</th>
+                        <th class="py-2.5 px-4 w-24 text-right">Order</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-[#8b949e]">
+                                <i class="fa-solid fa-spinner fa-spin text-lg text-[#58a6ff] mb-2"></i>
+                                <p>Loading catalog items...</p>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <template x-for="s in filteredServices" :key="s.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2.5 px-4 font-mono text-[11px] font-bold text-[#58a6ff]" x-text="'#' + s.id"></td>
+                            <td class="py-2.5 px-4">
+                                <span class="font-semibold text-[#f0f6fc] text-xs block" x-text="s.name"></span>
+                                <span class="text-[10px] text-[#8b949e] font-mono px-1.5 py-0.2 rounded bg-[#161b22] border border-[#21262d] mt-0.5 inline-block" x-text="s.category"></span>
+                            </td>
+                            <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono text-xs">
+                                ₹<span x-text="s.rate"></span>
+                            </td>
+                            <td class="py-2.5 px-4 font-mono text-[11px] text-[#8b949e]">
+                                <span x-text="s.min"></span> - <span x-text="s.max"></span>
+                            </td>
+                            <td class="py-2.5 px-4 text-center">
+                                <span x-show="s.refill" class="gh-badge-open text-[10px]">
+                                    <i class="fa-solid fa-check mr-0.5"></i>Yes
+                                </span>
+                                <span x-show="!s.refill" class="text-[#6e7681] text-xs">-</span>
+                            </td>
+                            <td class="py-2.5 px-4 text-center">
+                                <span x-show="s.cancel" class="gh-badge-draft text-[10px]">
+                                    <i class="fa-solid fa-check mr-0.5"></i>Yes
+                                </span>
+                                <span x-show="!s.cancel" class="text-[#6e7681] text-xs">-</span>
+                            </td>
+                            <td class="py-2.5 px-4 text-right">
+                                <a :href="'/new-order?service=' + s.id" class="gh-btn-primary py-0.5 px-2.5 text-xs">
+                                    Use
+                                </a>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

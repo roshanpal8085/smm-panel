@@ -1,0 +1,483 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}API Providers Management | Admin Console | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6" x-data="{
+    providers: [],
+    registeredSlugs: [],
+    loading: true,
+    syncingId: null,
+    syncingAll: false,
+    checkingBalanceId: null,
+    balances: {},
+    
+    // Edit Modal
+    showEditModal: false,
+    editForm: {
+        id: null,
+        name: '',
+        slug: '',
+        api_url: '',
+        api_key: '',
+        timeout_seconds: 30,
+        max_retries: 3,
+        rate_limit_rpm: 60,
+        is_active: true,
+        is_default: false
+    },
+
+    // Add Modal
+    showAddModal: false,
+    addForm: {
+        name: '',
+        slug: '',
+        api_url: '',
+        api_key: '',
+        timeout_seconds: 30,
+        max_retries: 3,
+        rate_limit_rpm: 60,
+        is_active: true,
+        is_default: false
+    },
+
+    async fetchProviders() {
+        this.loading = true;
+        try {
+            const res = await fetch('/admin/providers');
+            const data = await res.json();
+            if (data.success) {
+                this.providers = data.providers;
+                this.registeredSlugs = data.registered_slugs || [];
+                // Query balances for all active providers
+                this.providers.forEach(p => {
+                    if (p.is_active) {
+                        this.fetchBalance(p.id);
+                    }
+                });
+            }
+        } catch(e) {
+            console.error(e);
+            showToast('Failed to load providers', 'error');
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async fetchBalance(providerId) {
+        this.checkingBalanceId = providerId;
+        try {
+            const res = await fetch(`/admin/providers/${providerId}/balance`);
+            const data = await res.json();
+            if (data.success) {
+                this.balances[providerId] = {
+                    balance: data.balance,
+                    currency: data.currency || 'INR'
+                };
+            } else {
+                this.balances[providerId] = { balance: 'Error', currency: '' };
+            }
+        } catch(e) {
+            this.balances[providerId] = { balance: 'Failed', currency: '' };
+        } finally {
+            this.checkingBalanceId = null;
+        }
+    },
+
+    async syncProvider(providerId, slug) {
+        if (!confirm(`Sync services from provider '${slug}'?\nThis will import and update rates in your catalog.`)) return;
+        this.syncingId = providerId;
+        try {
+            showToast(`Syncing services from ${slug}...`, 'info');
+            const res = await fetch(`/admin/providers/${providerId}/sync`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Sync complete! Imported: ${data.imported}, Updated: ${data.updated}`, 'success');
+                this.fetchProviders();
+            } else {
+                showToast(data.detail || 'Sync failed', 'error');
+            }
+        } catch(e) {
+            showToast('Error syncing provider', 'error');
+        } finally {
+            this.syncingId = null;
+        }
+    },
+
+    async syncAll() {
+        if (!confirm('Sync services from ALL active providers?\nThis will update all provider services.')) return;
+        this.syncingAll = true;
+        try {
+            showToast('Syncing all providers...', 'info');
+            const res = await fetch('/admin/providers/sync-all', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('All providers synchronized successfully!', 'success');
+                this.fetchProviders();
+            } else {
+                showToast(data.detail || 'Sync failed', 'error');
+            }
+        } catch(e) {
+            showToast('Sync error occurred', 'error');
+        } finally {
+            this.syncingAll = false;
+        }
+    },
+
+    openEdit(p) {
+        this.editForm = {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            api_url: p.api_url,
+            api_key: '',
+            timeout_seconds: p.timeout_seconds,
+            max_retries: p.max_retries,
+            rate_limit_rpm: p.rate_limit_rpm,
+            is_active: p.is_active,
+            is_default: p.is_default
+        };
+        this.showEditModal = true;
+    },
+
+    async saveEdit() {
+        try {
+            const payload = {
+                name: this.editForm.name,
+                api_url: this.editForm.api_url,
+                timeout_seconds: parseInt(this.editForm.timeout_seconds),
+                max_retries: parseInt(this.editForm.max_retries),
+                rate_limit_rpm: parseInt(this.editForm.rate_limit_rpm),
+                is_active: this.editForm.is_active,
+                is_default: this.editForm.is_default
+            };
+            if (this.editForm.api_key && this.editForm.api_key.trim()) {
+                payload.api_key = this.editForm.api_key.trim();
+            }
+
+            const res = await fetch(`/admin/providers/${this.editForm.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('Provider updated successfully', 'success');
+                this.showEditModal = false;
+                this.fetchProviders();
+            } else {
+                showToast(data.detail || 'Failed to update provider', 'error');
+            }
+        } catch(e) {
+            showToast('Error updating provider', 'error');
+        }
+    },
+
+    openAdd() {
+        this.addForm = {
+            name: '',
+            slug: this.registeredSlugs[0] || '',
+            api_url: '',
+            api_key: '',
+            timeout_seconds: 30,
+            max_retries: 3,
+            rate_limit_rpm: 60,
+            is_active: true,
+            is_default: false
+        };
+        this.showAddModal = true;
+    },
+
+    async saveAdd() {
+        if (!this.addForm.name || !this.addForm.slug || !this.addForm.api_url || !this.addForm.api_key) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+        try {
+            const payload = {
+                name: this.addForm.name,
+                slug: this.addForm.slug,
+                api_url: this.addForm.api_url,
+                api_key: this.addForm.api_key,
+                timeout_seconds: parseInt(this.addForm.timeout_seconds),
+                max_retries: parseInt(this.addForm.max_retries),
+                rate_limit_rpm: parseInt(this.addForm.rate_limit_rpm),
+                is_active: this.addForm.is_active,
+                is_default: this.addForm.is_default
+            };
+            const res = await fetch('/admin/providers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('Provider registered successfully', 'success');
+                this.showAddModal = false;
+                this.fetchProviders();
+            } else {
+                showToast(data.detail || 'Failed to create provider', 'error');
+            }
+        } catch(e) {
+            showToast('Error creating provider', 'error');
+        }
+    },
+
+    init() {
+        this.fetchProviders();
+    }
+}">
+
+    <!-- Header Actions -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Upstream Supply Integrations</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30" x-text="providers.length + ' Configured'"></span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">API Providers Management</h1>
+            <p class="text-xs text-slate-400 mt-1">Configure external wholesale SMM API endpoints, manage credentials, verify real-time balances, and run service sync jobs.</p>
+        </div>
+
+        <div class="flex items-center gap-3 flex-wrap">
+            <button @click="syncAll()" :disabled="syncingAll" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md shadow-amber-600/30 flex items-center gap-2 disabled:opacity-50 transition-all">
+                <i :class="syncingAll ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-arrows-rotate'"></i>
+                <span x-text="syncingAll ? 'Syncing All...' : 'Sync All Providers'"></span>
+            </button>
+            <button @click="openAdd()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-plus"></i> Add Provider
+            </button>
+        </div>
+    </div>
+
+    <!-- Providers Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <template x-if="loading">
+            <div class="col-span-full py-16 text-center text-slate-400">
+                <i class="fa-solid fa-spinner fa-spin text-3xl mb-3 text-amber-400"></i>
+                <p class="text-sm font-semibold">Loading API providers & balances...</p>
+            </div>
+        </template>
+
+        <template x-for="p in providers" :key="p.id">
+            <div class="glass-panel p-6 rounded-3xl border border-white/10 hover:border-amber-500/30 transition-all space-y-4 relative overflow-hidden bg-gradient-to-br from-dark-850 to-dark-900 shadow-xl">
+                <!-- Top Card Info -->
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-black">
+                            <i class="fa-solid fa-server"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold text-white tracking-tight" x-text="p.name"></h3>
+                                <template x-if="p.is_default">
+                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">DEFAULT</span>
+                                </template>
+                            </div>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-dark-800 text-slate-300 border border-white/10 uppercase" x-text="p.slug"></span>
+                                <span class="text-xs font-semibold" :class="p.is_active ? 'text-emerald-400' : 'text-slate-500'">
+                                    <i class="fa-solid fa-circle text-[8px] mr-1"></i>
+                                    <span x-text="p.is_active ? 'Active' : 'Disabled'"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Balance Pill -->
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-end gap-1">
+                            <span>Live Balance</span>
+                            <button @click="fetchBalance(p.id)" class="text-amber-400 hover:text-amber-300" :disabled="checkingBalanceId === p.id">
+                                <i class="fa-solid fa-arrows-rotate text-[10px]" :class="{ 'animate-spin': checkingBalanceId === p.id }"></i>
+                            </button>
+                        </div>
+                        <div class="text-xl font-black text-white font-mono mt-0.5">
+                            <span x-text="balances[p.id] ? (balances[p.id].currency + ' ' + balances[p.id].balance) : 'Loading...'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Details Details -->
+                <div class="p-3.5 rounded-2xl bg-dark-950/60 border border-white/5 space-y-2 text-xs font-mono">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-sans font-semibold text-slate-400">API URL:</span>
+                        <span class="text-cyan-400 truncate max-w-xs" x-text="p.api_url"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-[11px] font-sans font-semibold text-slate-400">API Key:</span>
+                        <span class="text-slate-300" x-text="p.api_key_masked"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-400 pt-1 border-t border-white/5">
+                        <span class="text-[11px] font-sans font-semibold text-slate-400">Settings:</span>
+                        <span class="text-slate-400" x-text="`Timeout: ${p.timeout_seconds}s | Retries: ${p.max_retries} | Limit: ${p.rate_limit_rpm} rpm`"></span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
+                    <div class="flex items-center gap-2">
+                        <button @click="syncProvider(p.id, p.slug)" :disabled="syncingId === p.id" class="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-amber-300 border border-amber-500/20 font-semibold flex items-center gap-1.5 transition-all">
+                            <i :class="syncingId === p.id ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-arrows-rotate'"></i>
+                            <span>Sync Services</span>
+                        </button>
+                        <a :href="`/admin/services-page`" class="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-white/10 font-semibold flex items-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-list text-cyan-400"></i>
+                            <span>View Catalog</span>
+                        </a>
+                    </div>
+                    <div>
+                        <button @click="openEdit(p)" class="px-3 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-700 text-white border border-white/10 font-semibold flex items-center gap-1.5 transition-all">
+                            <i class="fa-solid fa-pen-to-square text-xs text-amber-400"></i>
+                            <span>Configure</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Edit Provider Modal -->
+    <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
+        <div class="admin-card p-6 sm:p-8 rounded-3xl border border-white/10 max-w-lg w-full space-y-5 bg-dark-900 shadow-2xl" @click.outside="showEditModal = false">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-amber-400"></i> Configure Provider
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="editForm.name + ' (' + editForm.slug + ')'"></p>
+                </div>
+                <button @click="showEditModal = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Display Name</label>
+                    <input type="text" x-model="editForm.name" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">API Endpoint URL</label>
+                    <input type="text" x-model="editForm.api_url" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">New API Key (Leave blank to keep current key)</label>
+                    <input type="password" x-model="editForm.api_key" placeholder="Enter new API key if changing..." class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Timeout (s)</label>
+                        <input type="number" x-model="editForm.timeout_seconds" min="5" max="120" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Max Retries</label>
+                        <input type="number" x-model="editForm.max_retries" min="1" max="10" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Rate Limit (rpm)</label>
+                        <input type="number" x-model="editForm.rate_limit_rpm" min="0" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="editForm.is_active" class="rounded bg-dark-950 border-white/20 text-amber-500 focus:ring-0">
+                        <span class="font-semibold text-slate-300">Active Provider</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="editForm.is_default" class="rounded bg-dark-950 border-white/20 text-amber-500 focus:ring-0">
+                        <span class="font-semibold text-slate-300">Default Provider</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 font-semibold text-xs">Cancel</button>
+                <button @click="saveEdit()" class="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md shadow-amber-600/30">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Provider Modal -->
+    <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" x-cloak>
+        <div class="admin-card p-6 sm:p-8 rounded-3xl border border-white/10 max-w-lg w-full space-y-5 bg-dark-900 shadow-2xl" @click.outside="showAddModal = false">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-emerald-400"></i> Add API Provider
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Register an upstream SMM API provider adapter</p>
+                </div>
+                <button @click="showAddModal = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Provider Adapter Slug *</label>
+                    <select x-model="addForm.slug" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500">
+                        <template x-for="slug in registeredSlugs" :key="slug">
+                            <option :value="slug" x-text="slug"></option>
+                        </template>
+                    </select>
+                    <p class="text-[10px] text-slate-500 mt-1">Select from supported provider adapters in the system registry.</p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Display Name *</label>
+                    <input type="text" x-model="addForm.name" placeholder="e.g. SMMXpert" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">API Endpoint URL *</label>
+                    <input type="text" x-model="addForm.api_url" placeholder="https://api.example.com/api/v2" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">API Key *</label>
+                    <input type="password" x-model="addForm.api_key" placeholder="Enter provider API key" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Timeout (s)</label>
+                        <input type="number" x-model="addForm.timeout_seconds" min="5" max="120" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Max Retries</label>
+                        <input type="number" x-model="addForm.max_retries" min="1" max="10" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Rate Limit (rpm)</label>
+                        <input type="number" x-model="addForm.rate_limit_rpm" min="0" class="w-full bg-dark-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 pt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="addForm.is_active" class="rounded bg-dark-950 border-white/20 text-emerald-500 focus:ring-0">
+                        <span class="font-semibold text-slate-300">Active</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="addForm.is_default" class="rounded bg-dark-950 border-white/20 text-emerald-500 focus:ring-0">
+                        <span class="font-semibold text-slate-300">Set as Default</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button @click="showAddModal = false" class="px-4 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 font-semibold text-xs">Cancel</button>
+                <button @click="saveAdd()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30">Create Provider</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

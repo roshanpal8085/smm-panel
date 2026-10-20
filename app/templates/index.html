@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}SMM PRIME | #1 Reseller SMM Panel & Instant Social Growth{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative pt-16 pb-20 border-b border-[#30363d]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <!-- Live Status Pill -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#161b22] border border-[#30363d] text-xs font-medium text-[#c9d1d9] mb-6 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-[#238636] animate-pulse"></span>
+            <span class="text-[#3fb950] font-semibold">Active:</span>
+            <span>Universal API v2 & 3,800+ Live Services</span>
+            <a href="/api-docs" class="text-[#58a6ff] hover:underline font-semibold ml-1">Docs &rarr;</a>
+        </div>
+
+        <!-- Main Headline -->
+        <h1 class="text-4xl sm:text-6xl font-black text-[#f0f6fc] tracking-tight max-w-4xl mx-auto leading-tight mb-5">
+            Scale Your Social Growth <span class="text-[#58a6ff]">at Lightning Speed</span>.
+        </h1>
+
+        <p class="text-base sm:text-lg text-[#8b949e] max-w-2xl mx-auto mb-8 font-normal leading-relaxed">
+            India's most trusted SMM reseller panel. Direct wholesale rates, sub-second API delivery, and 24/7 dedicated support.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-12">
+            <a href="{% if user %}/new-order{% else %}/register{% endif %}" class="gh-btn-primary py-2.5 px-5 text-sm font-semibold">
+                <i class="fa-solid fa-bolt text-xs mr-1"></i> Start Growing Now
+            </a>
+            <a href="#services-explorer" class="gh-btn py-2.5 px-5 text-sm font-semibold">
+                <i class="fa-solid fa-list-check text-xs mr-1 text-[#8b949e]"></i> Explore Services
+            </a>
+        </div>
+
+        <!-- GitHub CLI Terminal Box -->
+        <div class="max-w-2xl mx-auto gh-box overflow-hidden text-left shadow-2xl">
+            <div class="gh-box-header flex items-center justify-between text-xs py-2 px-3.5 bg-[#161b22]">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#da3633]"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#d29922]"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#238636]"></span>
+                    <span class="font-mono text-[#8b949e] text-[11px] ml-2">bash — smm-cli v2</span>
+                </div>
+                <span class="text-[10px] text-[#3fb950] font-mono">provider network: connected</span>
+            </div>
+            <div class="p-4 bg-[#010409] font-mono text-xs text-[#c9d1d9] space-y-1.5 leading-relaxed overflow-x-auto">
+                <p class="text-[#8b949e]">$ curl -X POST https://smm-prime.internal/api/v2 \</p>
+                <p class="text-[#8b949e] pl-4">-d "action=add" -d "service=104" -d "quantity=1000"</p>
+                <p class="text-[#3fb950]">✓ Order #94821 routed to Primary Provider (latency: 114ms)</p>
+                <p class="text-[#8b949e]">✓ Status: In progress · Remainder: 1,000 · Charge: ₹45.00</p>
+            </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto mt-10">
+            <div class="gh-box p-3.5 text-center">
+                <div class="text-2xl font-bold text-[#f0f6fc] font-mono mb-0.5">3,800+</div>
+                <div class="text-[11px] text-[#8b949e] flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-box text-[#58a6ff]"></i> Live Packages
+                </div>
+            </div>
+            <div class="gh-box p-3.5 text-center">
+                <div class="text-2xl font-bold text-[#f0f6fc] font-mono mb-0.5">0.1s</div>
+                <div class="text-[11px] text-[#8b949e] flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-gauge text-[#3fb950]"></i> API Dispatch Speed
+                </div>
+            </div>
+            <div class="gh-box p-3.5 text-center">
+                <div class="text-2xl font-bold text-[#f0f6fc] font-mono mb-0.5">₹0.02</div>
+                <div class="text-[11px] text-[#8b949e] flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-tag text-[#d29922]"></i> Starting Price / 1K
+                </div>
+            </div>
+            <div class="gh-box p-3.5 text-center">
+                <div class="text-2xl font-bold text-[#f0f6fc] font-mono mb-0.5">99.9%</div>
+                <div class="text-[11px] text-[#8b949e] flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-shield-check text-[#a371f7]"></i> Delivery Success
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Interactive Price Calculator Section -->
+<section class="py-14 border-b border-[#30363d] bg-[#0d1117]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-8">
+            <h2 class="text-xs font-mono font-semibold uppercase tracking-wider text-[#58a6ff] mb-1">Pricing Estimator</h2>
+            <h3 class="text-2xl font-bold text-[#f0f6fc]">Calculate Your Order Cost Instantly</h3>
+            <p class="text-[#8b949e] text-xs mt-1">Select any service, adjust desired volume, and view real-time wholesale pricing.</p>
+        </div>
+
+        <div class="gh-box p-5" x-data="{
+            selectedRate: 50,
+            quantity: 1000,
+            get totalCost() {
+                return ((this.quantity / 1000) * this.selectedRate).toFixed(2);
+            }
+        }">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Platform Service</label>
+                    <select x-model="selectedRate" class="gh-input text-xs py-2">
+                        <option value="45.00">Instagram Followers (HQ Real) - ₹45 / 1K</option>
+                        <option value="12.50">Instagram Likes (Instant) - ₹12.50 / 1K</option>
+                        <option value="6.00">Instagram Video Views - ₹6 / 1K</option>
+                        <option value="120.00">YouTube Watch Hours / Views - ₹120 / 1K</option>
+                        <option value="180.00">YouTube Subscribers (Non-Drop) - ₹180 / 1K</option>
+                        <option value="25.00">Telegram Channel Members - ₹25 / 1K</option>
+                        <option value="35.00">Twitter / X Followers - ₹35 / 1K</option>
+                        <option value="18.00">TikTok Views & Likes - ₹18 / 1K</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Quantity</label>
+                    <input type="number" x-model.number="quantity" min="100" max="1000000" step="100" class="gh-input font-mono text-xs py-2">
+                </div>
+            </div>
+
+            <div class="p-4 rounded bg-[#161b22] border border-[#30363d] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <span class="block text-[11px] text-[#8b949e] uppercase font-semibold">Estimated Total Cost</span>
+                    <span class="text-2xl font-bold text-[#3fb950] font-mono">₹<span x-text="totalCost"></span></span>
+                    <span class="text-[11px] text-[#8b949e] font-mono ml-1">INR</span>
+                </div>
+                <a href="{% if user %}/new-order{% else %}/register{% endif %}" class="gh-btn-primary text-xs py-2 px-4">
+                    Place This Order &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Services Explorer Section -->
+<section id="services-explorer" class="py-14 border-b border-[#30363d]" x-data="{
+    search: '',
+    selectedCategory: 'All',
+    services: [],
+    loading: true,
+    async init() {
+        try {
+            const res = await fetch('/services?limit=100');
+            const data = await res.json();
+            if (data.success) {
+                this.services = data.services;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+    get filteredServices() {
+        return this.services.filter(s => {
+            const matchesCat = this.selectedCategory === 'All' || s.category.toLowerCase().includes(this.selectedCategory.toLowerCase());
+            const matchesSearch = !this.search || s.name.toLowerCase().includes(this.search.toLowerCase()) || s.id.toString().includes(this.search);
+            return matchesCat && matchesSearch;
+        }).slice(0, 40);
+    }
+}">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h2 class="text-xs font-mono font-semibold uppercase tracking-wider text-[#58a6ff] mb-1">Packages Catalog</h2>
+                <h3 class="text-2xl font-bold text-[#f0f6fc]">Live Services & Wholesale Rates</h3>
+            </div>
+            <div class="w-full md:w-72 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                <input type="text" x-model="search" placeholder="Search service or ID..." class="gh-input text-xs py-1.5 pl-8 pr-3">
+            </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <template x-for="cat in ['All', 'Instagram', 'YouTube', 'TikTok', 'Telegram', 'Twitter', 'Facebook', 'Spotify']">
+                <button @click="selectedCategory = cat" 
+                    :class="selectedCategory === cat ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e] font-semibold' : 'text-[#8b949e] hover:text-[#f0f6fc] border-[#30363d] bg-[#0d1117]'"
+                    class="px-3 py-1 rounded-md border text-xs transition-colors whitespace-nowrap"
+                    x-text="cat">
+                </button>
+            </template>
+        </div>
+
+        <!-- Table Box -->
+        <div class="gh-box overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                            <th class="py-2.5 px-4 w-16 font-mono">ID</th>
+                            <th class="py-2.5 px-4">Package</th>
+                            <th class="py-2.5 px-4 w-32 font-mono">Rate / 1K</th>
+                            <th class="py-2.5 px-4 w-32 font-mono">Min / Max</th>
+                            <th class="py-2.5 px-4 w-24 text-center">Refill</th>
+                            <th class="py-2.5 px-4 w-24 text-right">Order</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                        <template x-if="loading">
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-[#8b949e]">
+                                    <i class="fa-solid fa-spinner fa-spin text-base text-[#58a6ff] mb-2"></i>
+                                    <p>Loading database packages...</p>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <template x-for="s in filteredServices" :key="s.id">
+                            <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                                <td class="py-2.5 px-4 font-mono font-bold text-[#58a6ff]" x-text="'#' + s.id"></td>
+                                <td class="py-2.5 px-4">
+                                    <span class="font-semibold text-[#f0f6fc] block truncate max-w-sm" x-text="s.name"></span>
+                                    <span class="text-[10px] text-[#8b949e] font-mono px-1.5 py-0.2 rounded bg-[#161b22] border border-[#21262d] inline-block mt-0.5" x-text="s.category"></span>
+                                </td>
+                                <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono">
+                                    ₹<span x-text="s.rate"></span>
+                                </td>
+                                <td class="py-2.5 px-4 font-mono text-[11px] text-[#8b949e]">
+                                    <span x-text="s.min"></span> / <span x-text="s.max"></span>
+                                </td>
+                                <td class="py-2.5 px-4 text-center">
+                                    <span x-show="s.refill" class="gh-badge-open text-[10px]">Yes</span>
+                                    <span x-show="!s.refill" class="text-[#6e7681]">-</span>
+                                </td>
+                                <td class="py-2.5 px-4 text-right">
+                                    <a :href="'{% if user %}/new-order?service=' + s.id + '{% else %}/login{% endif %}'" class="gh-btn-primary py-0.5 px-2 text-xs">
+                                        Order
+                                    </a>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="p-3 bg-[#161b22] border-t border-[#30363d] flex items-center justify-between text-xs text-[#8b949e]">
+                <span>Showing top active packages</span>
+                <a href="/services-list" class="text-[#58a6ff] hover:underline font-medium">
+                    View Complete Catalog (3,800+ Services) &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Enterprise Features Grid -->
+<section id="features" class="py-14 border-b border-[#30363d] bg-[#0d1117]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <h2 class="text-xs font-mono font-semibold uppercase tracking-wider text-[#58a6ff] mb-1">Architecture</h2>
+            <h3 class="text-2xl font-bold text-[#f0f6fc]">Enterprise Platform Infrastructure</h3>
+            <p class="text-xs text-[#8b949e] mt-1">Engineered for 99.9% uptime, multi-provider automated routing, and zero order drop.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="gh-box p-4 space-y-2">
+                <div class="w-8 h-8 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#58a6ff]">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h4 class="text-sm font-bold text-[#f0f6fc]">Automated Dispatch</h4>
+                <p class="text-xs text-[#8b949e] leading-relaxed">
+                    Background queue engine routes orders to direct providers in sub-second time.
+                </p>
+            </div>
+
+            <div class="gh-box p-4 space-y-2">
+                <div class="w-8 h-8 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#3fb950]">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <h4 class="text-sm font-bold text-[#f0f6fc]">Wholesale Rates</h4>
+                <p class="text-xs text-[#8b949e] leading-relaxed">
+                    Direct provider integrations guarantee the lowest wholesale pricing without middlemen markups.
+                </p>
+            </div>
+
+            <div class="gh-box p-4 space-y-2">
+                <div class="w-8 h-8 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#a371f7]">
+                    <i class="fa-solid fa-terminal"></i>
+                </div>
+                <h4 class="text-sm font-bold text-[#f0f6fc]">Universal REST API</h4>
+                <p class="text-xs text-[#8b949e] leading-relaxed">
+                    Industry-standard SMM API v2 support for connecting bots, panels, and custom applications.
+                </p>
+            </div>
+
+            <div class="gh-box p-4 space-y-2">
+                <div class="w-8 h-8 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#d29922]">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <h4 class="text-sm font-bold text-[#f0f6fc]">24/7 Support Desk</h4>
+                <p class="text-xs text-[#8b949e] leading-relaxed">
+                    Dedicated ticket support team ready to assist with refills, cancellations, and inquiries.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Accordion -->
+<section id="faq" class="py-14 bg-[#0d1117]" x-data="{ openFaq: 1 }">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
+        <div class="text-center mb-8">
+            <h2 class="text-xs font-mono font-semibold uppercase tracking-wider text-[#58a6ff] mb-1">FAQ</h2>
+            <h3 class="text-2xl font-bold text-[#f0f6fc]">Frequently Asked Questions</h3>
+        </div>
+
+        <div class="space-y-2 text-xs">
+            <div class="gh-box overflow-hidden">
+                <button @click="openFaq = openFaq === 1 ? null : 1" class="w-full p-3.5 text-left flex items-center justify-between font-semibold text-[#f0f6fc]">
+                    <span>What is an SMM Reseller Panel?</span>
+                    <i :class="openFaq === 1 ? 'fa-solid fa-chevron-up text-[#58a6ff]' : 'fa-solid fa-chevron-down text-[#8b949e]'"></i>
+                </button>
+                <div x-show="openFaq === 1" x-cloak class="px-3.5 pb-3.5 text-[#8b949e] leading-relaxed border-t border-[#21262d] pt-2">
+                    An SMM (Social Media Marketing) panel provides automated delivery of social engagement metrics (views, followers, likes, watch hours) via API at wholesale rates.
+                </div>
+            </div>
+
+            <div class="gh-box overflow-hidden">
+                <button @click="openFaq = openFaq === 2 ? null : 2" class="w-full p-3.5 text-left flex items-center justify-between font-semibold text-[#f0f6fc]">
+                    <span>How quickly are campaigns dispatched?</span>
+                    <i :class="openFaq === 2 ? 'fa-solid fa-chevron-up text-[#58a6ff]' : 'fa-solid fa-chevron-down text-[#8b949e]'"></i>
+                </button>
+                <div x-show="openFaq === 2" x-cloak class="px-3.5 pb-3.5 text-[#8b949e] leading-relaxed border-t border-[#21262d] pt-2">
+                    Most orders transmit to providers in sub-second latency and start delivering within 0 to 60 seconds.
+                </div>
+            </div>
+
+            <div class="gh-box overflow-hidden">
+                <button @click="openFaq = openFaq === 3 ? null : 3" class="w-full p-3.5 text-left flex items-center justify-between font-semibold text-[#f0f6fc]">
+                    <span>How do I deposit funds into my wallet?</span>
+                    <i :class="openFaq === 3 ? 'fa-solid fa-chevron-up text-[#58a6ff]' : 'fa-solid fa-chevron-down text-[#8b949e]'"></i>
+                </button>
+                <div x-show="openFaq === 3" x-cloak class="px-3.5 pb-3.5 text-[#8b949e] leading-relaxed border-t border-[#21262d] pt-2">
+                    Instant top-up via UPI QR code (GPay, PhonePe, Paytm, BHIM) with 0% fees, or Cryptocurrency (USDT TRC20, BTC).
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

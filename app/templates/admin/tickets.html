@@ -1,0 +1,100 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Support Desk Management | Admin Console | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    tickets: [],
+    loading: true,
+
+    async fetchTickets() {
+        this.loading = true;
+        try {
+            const res = await fetch('/admin/tickets');
+            const data = await res.json();
+            if (data.success) {
+                this.tickets = data.tickets;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    init() {
+        this.fetchTickets();
+    }
+}">
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Governance</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc] font-mono">issues-desk</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Support Desk & Inquiries</h1>
+        </div>
+        <button @click="fetchTickets()" class="gh-btn text-xs">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Issues Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-dot text-[#3fb950]"></i>
+                <span class="font-semibold text-[#f0f6fc]">Reported Customer Issues</span>
+                <span class="gh-counter" x-text="tickets.length"></span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-3 font-mono w-16">ID</th>
+                        <th class="py-2.5 px-3">Member</th>
+                        <th class="py-2.5 px-3">Issue Title</th>
+                        <th class="py-2.5 px-3">Category</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-[#8b949e]">Loading issues...</td>
+                        </tr>
+                    </template>
+                    <template x-for="t in tickets" :key="t.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 cursor-pointer" @click="window.location.href = '/support/' + t.id">
+                            <td class="py-2 px-3 font-mono text-[11px] font-bold text-[#58a6ff]" x-text="'#' + t.id"></td>
+                            <td class="py-2 px-3 font-semibold text-[#f0f6fc]" x-text="t.username"></td>
+                            <td class="py-2 px-3">
+                                <span class="font-semibold text-[#f0f6fc] text-xs block" x-text="t.subject"></span>
+                                <span x-show="t.order_id" class="text-[10px] text-[#8b949e] font-mono" x-text="'Linked Order #' + t.order_id"></span>
+                            </td>
+                            <td class="py-2 px-3 text-[#8b949e]" x-text="t.category"></td>
+                            <td class="py-2 px-3">
+                                <span :class="{
+                                    'gh-badge-open': t.status === 'Answered',
+                                    'gh-badge-draft': t.status === 'Open',
+                                    'gh-badge-closed': t.status === 'Closed'
+                                }" class="text-[10px]" x-text="t.status"></span>
+                            </td>
+                            <td class="py-2 px-3 text-right">
+                                <a :href="'/support/' + t.id" class="gh-btn-primary py-0.5 px-2 text-xs">
+                                    Reply &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

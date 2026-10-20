@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Developer & Reseller REST API Documentation | SMM PRIME{% endblock %}
+
+{% block content %}
+<div class="py-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <!-- Header -->
+    <div class="pb-4 border-b border-[#30363d]">
+        <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+            <span>Documentation</span>
+            <span>/</span>
+            <span class="text-[#f0f6fc] font-mono">rest-api-v2</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-bold text-[#f0f6fc] tracking-tight mt-1">REST API Reference</h1>
+        <p class="text-xs sm:text-sm text-[#8b949e] mt-1.5">Universal SMM API v2 specification for order routing, balance checks, and status webhooks.</p>
+    </div>
+
+    <!-- General Info Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header text-xs">
+            <i class="fa-solid fa-server text-[#58a6ff] mr-1.5"></i> Protocol & Endpoint
+        </div>
+        <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
+                <span class="block text-[#8b949e] text-[10px] uppercase font-mono mb-0.5">Method</span>
+                <span class="text-[#3fb950] font-bold font-mono">POST</span>
+            </div>
+            <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
+                <span class="block text-[#8b949e] text-[10px] uppercase font-mono mb-0.5">Format</span>
+                <span class="text-[#f0f6fc] font-bold font-mono">application/json</span>
+            </div>
+            <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
+                <span class="block text-[#8b949e] text-[10px] uppercase font-mono mb-0.5">Auth Header / Key</span>
+                <span class="text-[#58a6ff] font-bold font-mono">key parameter</span>
+            </div>
+            <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
+                <span class="block text-[#8b949e] text-[10px] uppercase font-mono mb-0.5">Path</span>
+                <span class="text-[#f0f6fc] font-mono text-[11px]">/api/v2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Service List -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="gh-badge-open text-[10px] font-mono font-bold">POST</span>
+                <span class="font-bold text-[#f0f6fc]">action: services</span>
+            </div>
+            <span class="text-[#8b949e] text-[11px]">Fetch active packages & limits</span>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+            <p class="text-[#8b949e]">Returns an array of all active services, rates per 1,000, and minimum/maximum constraints.</p>
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9]">
+                <p class="text-[#8b949e] mb-1.5">// Payload Parameters</p>
+                <p>key: <span class="text-[#58a6ff]">&lt;your_api_key&gt;</span></p>
+                <p>action: <span class="text-[#3fb950]">"services"</span></p>
+            </div>
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9] overflow-x-auto">
+                <p class="text-[#8b949e] mb-1.5">// Sample 200 OK Response</p>
+                <pre class="text-[#a371f7]">[
+  {
+    "service": 1,
+    "name": "Instagram Followers HQ",
+    "type": "Default",
+    "category": "Instagram Followers",
+    "rate": "45.00",
+    "min": 100,
+    "max": 10000,
+    "refill": true,
+    "cancel": false
+  }
+]</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Add Order -->
+    <div id="add-order" class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="gh-badge-open text-[10px] font-mono font-bold">POST</span>
+                <span class="font-bold text-[#f0f6fc]">action: add</span>
+            </div>
+            <span class="text-[#8b949e] text-[11px]">Dispatch new campaign</span>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+            <p class="text-[#8b949e]">Debits the user wallet in real time and submits the campaign to background routing engines.</p>
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9]">
+                <p class="text-[#8b949e] mb-1.5">// Payload Parameters</p>
+                <p>key: <span class="text-[#58a6ff]">&lt;your_api_key&gt;</span></p>
+                <p>action: <span class="text-[#3fb950]">"add"</span></p>
+                <p>service: <span class="text-[#d29922]">1</span></p>
+                <p>link: <span class="text-[#f0f6fc]">"https://instagram.com/p/sample"</span></p>
+                <p>quantity: <span class="text-[#d29922]">1000</span></p>
+            </div>
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9] overflow-x-auto">
+                <p class="text-[#8b949e] mb-1.5">// Response</p>
+                <pre class="text-[#3fb950]">{ "order": 104 }</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Order Status -->
+    <div id="check-status" class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="gh-badge-open text-[10px] font-mono font-bold">POST</span>
+                <span class="font-bold text-[#f0f6fc]">action: status</span>
+            </div>
+            <span class="text-[#8b949e] text-[11px]">Check order progress</span>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+            <p class="text-[#8b949e]">Polls status for a single order ID or comma-separated batch list.</p>
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9] overflow-x-auto">
+                <p class="text-[#8b949e] mb-1.5">// Sample Single Order Response</p>
+                <pre class="text-[#58a6ff]">{
+  "charge": "45.00",
+  "start_count": "1200",
+  "status": "Completed",
+  "remains": "0",
+  "currency": "INR"
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. User Balance -->
+    <div id="balance" class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="gh-badge-open text-[10px] font-mono font-bold">POST</span>
+                <span class="font-bold text-[#f0f6fc]">action: balance</span>
+            </div>
+            <span class="text-[#8b949e] text-[11px]">Query wallet balance</span>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+            <div class="p-3 bg-[#010409] rounded border border-[#21262d] font-mono text-xs text-[#c9d1d9] overflow-x-auto">
+                <pre class="text-[#3fb950]">{
+  "balance": "1597.20",
+  "currency": "INR"
+}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

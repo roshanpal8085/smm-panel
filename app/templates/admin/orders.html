@@ -1,0 +1,118 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}All Platform Orders | Admin Console | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    orders: [],
+    search: '',
+    statusFilter: 'all',
+    loading: true,
+
+    async fetchOrders() {
+        this.loading = true;
+        try {
+            let url = `/admin/orders?status=${this.statusFilter}`;
+            if (this.search) url += `&search=${encodeURIComponent(this.search)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success) {
+                this.orders = data.orders;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async syncAllStatuses() {
+        try {
+            showToast('Syncing order statuses across active providers...', 'info');
+            const res = await fetch('/orders/sync-statuses', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Synced ${data.checked} orders (${data.updated} updated)`, 'success');
+                this.fetchOrders();
+            }
+        } catch(e) {
+            showToast('Sync failed', 'error');
+        }
+    },
+
+    init() {
+        this.fetchOrders();
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Governance</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc] font-mono">orders</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Platform Orders & Routing</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button @click="syncAllStatuses()" class="gh-btn-admin text-xs">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> Sync Upstream
+            </button>
+            <div class="relative w-60">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                <input type="text" x-model="search" @input.debounce.300ms="fetchOrders()" placeholder="Search ID, user, link..." class="gh-input text-xs py-1.5 pl-8 pr-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-3 font-mono">Our ID</th>
+                        <th class="py-2.5 px-3 font-mono">Provider ID</th>
+                        <th class="py-2.5 px-3">User</th>
+                        <th class="py-2.5 px-3">Package</th>
+                        <th class="py-2.5 px-3">Target</th>
+                        <th class="py-2.5 px-3 font-mono">Qty</th>
+                        <th class="py-2.5 px-3 font-mono">Charge</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3 text-right font-mono">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="9" class="py-8 text-center text-[#8b949e]">Loading orders...</td>
+                        </tr>
+                    </template>
+                    <template x-for="o in orders" :key="o.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2 px-3 font-mono text-[11px] font-bold text-[#58a6ff]" x-text="'#' + o.id"></td>
+                            <td class="py-2 px-3 font-mono text-[11px] text-[#d29922]" x-text="o.provider_order_id ? '#' + o.provider_order_id : '-'"></td>
+                            <td class="py-2 px-3 font-semibold text-[#f0f6fc]" x-text="o.username"></td>
+                            <td class="py-2 px-3 max-w-xs truncate text-[#c9d1d9]" x-text="o.service_name"></td>
+                            <td class="py-2 px-3 font-mono text-[11px] max-w-xs truncate">
+                                <a :href="o.link" target="_blank" class="text-[#58a6ff] hover:underline" x-text="o.link"></a>
+                            </td>
+                            <td class="py-2 px-3 font-mono text-[11px]" x-text="o.quantity"></td>
+                            <td class="py-2 px-3 font-bold text-[#3fb950] font-mono text-[11px]" x-text="'₹' + o.charge"></td>
+                            <td class="py-2 px-3">
+                                <span :class="{
+                                    'gh-badge-merged': o.status === 'Completed',
+                                    'gh-badge-open': o.status === 'Processing' || o.status === 'In progress',
+                                    'gh-badge-draft': o.status === 'Pending' || o.status === 'Partial',
+                                    'gh-badge-closed': o.status === 'Canceled' || o.status === 'Cancelled'
+                                }" class="text-[10px]" x-text="o.status"></span>
+                            </td>
+                            <td class="py-2 px-3 text-right font-mono text-[11px] text-[#8b949e] whitespace-nowrap" x-text="new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

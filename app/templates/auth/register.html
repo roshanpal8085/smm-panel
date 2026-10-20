@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Join SMM PRIME | Create Your Account{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-140px)] flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+    <!-- SMM PRIME Logo Header -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+        <a href="/" class="inline-flex items-center justify-center mb-3">
+            <div class="w-10 h-10 rounded-lg bg-[#238636] flex items-center justify-center text-white shadow-md">
+                <i class="fa-solid fa-bolt text-lg"></i>
+            </div>
+        </a>
+        <h1 class="text-2xl font-bold tracking-tight text-[#f0f6fc]">
+            Create your account on SMM PRIME
+        </h1>
+        <p class="text-xs text-[#8b949e] mt-1">Start growing with instant wholesale SMM delivery</p>
+    </div>
+
+    <div class="w-full max-w-[380px] space-y-4" x-data="{
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        agree: true,
+        loading: false,
+        error: '',
+        async handleRegister() {
+            if (!this.username || !this.email || !this.password) {
+                this.error = 'Please fill in all required fields';
+                return;
+            }
+            if (this.password !== this.confirmPassword) {
+                this.error = 'Passwords do not match';
+                return;
+            }
+            if (this.password.length < 6) {
+                this.error = 'Password must be at least 6 characters long';
+                return;
+            }
+            if (!this.agree) {
+                this.error = 'Please accept the Terms of Service';
+                return;
+            }
+
+            this.loading = true;
+            this.error = '';
+
+            try {
+                const res = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: this.username,
+                        email: this.email,
+                        password: this.password
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    showToast('Account created successfully! Welcome to SMM Prime.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    this.error = data.detail || data.error || 'Failed to create account';
+                }
+            } catch (err) {
+                this.error = 'Network error. Please try again.';
+            } finally {
+                this.loading = false;
+            }
+        }
+    }">
+        <!-- Error Banner -->
+        <div x-show="error" x-cloak class="p-3 rounded-md bg-[rgba(218,54,51,0.15)] border border-[rgba(248,81,73,0.35)] text-[#f85149] text-xs flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span x-text="error"></span>
+            </div>
+            <button type="button" @click="error = ''" class="text-[#f85149] hover:text-[#f0f6fc]">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Registration Box -->
+        <div class="p-5 rounded-md bg-[#161b22] border border-[#30363d] shadow-sm">
+            <form @submit.prevent="handleRegister" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Username</label>
+                    <input type="text" x-model="username" required autofocus placeholder="octocat" class="gh-input font-mono">
+                    <p class="text-[11px] text-[#8b949e] mt-1">This will be your reseller identifier.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Email address</label>
+                    <input type="email" x-model="email" required placeholder="you@domain.com" class="gh-input">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Password</label>
+                    <input type="password" x-model="password" required placeholder="At least 6 characters" class="gh-input">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Confirm Password</label>
+                    <input type="password" x-model="confirmPassword" required placeholder="Re-enter password" class="gh-input">
+                </div>
+
+                <div class="pt-1 flex items-start gap-2">
+                    <input type="checkbox" x-model="agree" id="terms" class="mt-0.5 rounded bg-[#0d1117] border-[#30363d] text-[#238636] focus:ring-0">
+                    <label for="terms" class="text-[11px] text-[#8b949e] leading-tight cursor-pointer">
+                        I agree to the Terms of Service, Reseller API policies, and Privacy Statement.
+                    </label>
+                </div>
+
+                <button type="submit" :disabled="loading" class="gh-btn-primary w-full py-2 text-center text-xs font-semibold disabled:opacity-50 mt-2">
+                    <span x-show="!loading">Create account</span>
+                    <span x-show="loading"><i class="fa-solid fa-spinner fa-spin mr-1.5"></i>Creating account...</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Already have account -->
+        <div class="p-4 rounded-md bg-[#161b22] border border-[#30363d] text-center text-xs text-[#c9d1d9]">
+            Already have an account? 
+            <a href="/login" class="text-[#58a6ff] hover:underline font-semibold ml-1">Sign in &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

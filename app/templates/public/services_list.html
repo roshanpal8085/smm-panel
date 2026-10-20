@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Complete Services Catalog & Rates | SMM PRIME{% endblock %}
+
+{% block content %}
+<div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4" x-data="{
+    services: [],
+    categories: [],
+    selectedCategory: 'All',
+    search: '',
+    loading: true,
+
+    async init() {
+        try {
+            const res = await fetch('/services');
+            const data = await res.json();
+            if (data.success) {
+                this.services = data.services;
+                const cats = new Set(this.services.map(s => s.category));
+                this.categories = ['All', ...Array.from(cats).sort()];
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    get filteredServices() {
+        return this.services.filter(s => {
+            const matchesCat = this.selectedCategory === 'All' || s.category === this.selectedCategory;
+            const matchesSearch = !this.search || 
+                s.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                s.id.toString().includes(this.search) ||
+                s.category.toLowerCase().includes(this.search.toLowerCase());
+            return matchesCat && matchesSearch;
+        });
+    }
+}">
+    <!-- Header -->
+    <div class="pb-4 border-b border-[#30363d] flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Marketplace</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc] font-mono">packages</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-[#f0f6fc] tracking-tight mt-1">Full Services & Price List</h1>
+            <p class="text-xs text-[#8b949e] mt-1">Browse wholesale rates across Instagram, YouTube, TikTok, Telegram and 20+ networks.</p>
+        </div>
+        <span class="gh-counter text-xs self-start md:self-end">
+            <span x-text="filteredServices.length"></span> packages active
+        </span>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div class="gh-box p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="w-full md:w-72">
+            <select x-model="selectedCategory" class="gh-input text-xs py-1.5">
+                <template x-for="cat in categories" :key="cat">
+                    <option :value="cat" x-text="cat"></option>
+                </template>
+            </select>
+        </div>
+
+        <div class="relative w-full md:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+            <input type="text" x-model="search" placeholder="Search service name, ID, or category..." class="gh-input text-xs py-1.5 pl-8 pr-3">
+        </div>
+    </div>
+
+    <!-- Services Table Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-4 w-16 font-mono">ID</th>
+                        <th class="py-2.5 px-4">Package</th>
+                        <th class="py-2.5 px-4 w-32 font-mono">Rate / 1K</th>
+                        <th class="py-2.5 px-4 w-32 font-mono">Min / Max</th>
+                        <th class="py-2.5 px-4 w-24 text-center">Refill</th>
+                        <th class="py-2.5 px-4 w-28 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="6" class="py-12 text-center text-[#8b949e]">
+                                <i class="fa-solid fa-spinner fa-spin text-base text-[#58a6ff] mb-2"></i>
+                                <p>Loading packages...</p>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <template x-for="s in filteredServices" :key="s.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2.5 px-4 font-mono font-bold text-[#58a6ff]" x-text="'#' + s.id"></td>
+                            <td class="py-2.5 px-4">
+                                <span class="font-semibold text-[#f0f6fc] text-xs block" x-text="s.name"></span>
+                                <span class="text-[10px] text-[#8b949e] font-mono px-1.5 py-0.2 rounded bg-[#161b22] border border-[#21262d] inline-block mt-0.5" x-text="s.category"></span>
+                            </td>
+                            <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono text-xs">
+                                ₹<span x-text="s.rate"></span>
+                            </td>
+                            <td class="py-2.5 px-4 font-mono text-[11px] text-[#8b949e]">
+                                <span x-text="s.min"></span> - <span x-text="s.max"></span>
+                            </td>
+                            <td class="py-2.5 px-4 text-center">
+                                <span x-show="s.refill" class="gh-badge-open text-[10px]">
+                                    <i class="fa-solid fa-check mr-0.5"></i>Yes
+                                </span>
+                                <span x-show="!s.refill" class="text-[#6e7681] text-xs">-</span>
+                            </td>
+                            <td class="py-2.5 px-4 text-right">
+                                <a :href="'{% if user %}/new-order?service=' + s.id + '{% else %}/login{% endif %}'" class="gh-btn-primary py-0.5 px-2.5 text-xs">
+                                    Order
+                                </a>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

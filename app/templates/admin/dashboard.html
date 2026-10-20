@@ -1,0 +1,160 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Enterprise Analytics & Overview | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    stats: null,
+    loading: true,
+
+    async fetchStats() {
+        this.loading = true;
+        try {
+            const res = await fetch('/admin/stats');
+            const data = await res.json();
+            if (data.success) {
+                this.stats = data.stats;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async triggerOrderSync() {
+        try {
+            showToast('Synchronizing in-flight orders with provider networks...', 'info');
+            const res = await fetch('/orders/sync-statuses', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Synced ${data.checked} orders (${data.updated} updated)`, 'success');
+            }
+        } catch(e) {
+            showToast('Sync failed', 'error');
+        }
+    },
+
+    init() {
+        this.fetchStats();
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Governance</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc] font-mono">overview</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Platform Analytics & Insights</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button @click="triggerOrderSync()" class="gh-btn text-xs">
+                <i class="fa-solid fa-arrows-rotate text-[#58a6ff]"></i> Sync In-Flight Orders
+            </button>
+            <a href="/admin/services-page" class="gh-btn-admin text-xs">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Sync Catalog
+            </a>
+        </div>
+    </div>
+
+    <!-- Connected API Providers Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#238636] animate-pulse"></span>
+                <span class="font-bold text-[#f0f6fc]">Connected Upstream Providers</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/admin/providers-page" class="text-[#58a6ff] hover:underline text-xs">
+                    Manage Providers &rarr;
+                </a>
+                <button @click="fetchStats()" class="gh-btn py-0.5 px-2 text-[11px] ml-1">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <template x-if="stats && stats.provider_balances && stats.provider_balances.length > 0">
+                <template x-for="p in stats.provider_balances" :key="p.slug">
+                    <div class="p-3.5 rounded bg-[#161b22] border border-[#21262d] flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-[#f0f6fc] text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-server text-[#58a6ff]"></i>
+                                <span x-text="p.name"></span>
+                            </span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#0d1117] border border-[#30363d] text-[#8b949e]" x-text="p.slug"></span>
+                        </div>
+                        <div class="text-2xl font-bold text-[#3fb950] font-mono" x-text="'₹ ' + p.balance"></div>
+                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-[#21262d] text-[11px] text-[#8b949e]">
+                            <span>Available balance</span>
+                            <span class="text-[#3fb950] font-mono flex items-center gap-1">
+                                <i class="fa-solid fa-circle-check text-[10px]"></i> Active
+                            </span>
+                        </div>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </div>
+
+    <!-- 6 Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Registered Users</span>
+                <i class="fa-solid fa-users text-[#58a6ff]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#f0f6fc] font-mono" x-text="stats ? stats.total_users : '...'"></div>
+            <a href="/admin/users-page" class="text-[11px] text-[#58a6ff] hover:underline mt-2 inline-block">Manage users &rarr;</a>
+        </div>
+
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Total Orders Processed</span>
+                <i class="fa-solid fa-boxes-stacked text-[#a371f7]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#f0f6fc] font-mono" x-text="stats ? stats.total_orders : '...'"></div>
+            <a href="/admin/orders-page" class="text-[11px] text-[#58a6ff] hover:underline mt-2 inline-block">Order console &rarr;</a>
+        </div>
+
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Gross Order Revenue</span>
+                <i class="fa-solid fa-coins text-[#3fb950]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#3fb950] font-mono" x-text="stats ? '₹' + stats.total_revenue : '...'"></div>
+            <span class="text-[11px] text-[#8b949e] mt-2 block">All completed transactions</span>
+        </div>
+
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Realized Gross Profit</span>
+                <i class="fa-solid fa-arrow-trend-up text-[#d29922]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#d29922] font-mono" x-text="stats ? '₹' + stats.realized_profit : '...'"></div>
+            <span class="text-[11px] text-[#8b949e] mt-2 block" x-text="stats ? 'Est: ₹' + stats.total_gross_profit : ''"></span>
+        </div>
+
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Catalog Services</span>
+                <i class="fa-solid fa-sliders text-[#58a6ff]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#f0f6fc] font-mono" x-text="stats ? stats.active_services : '...'"></div>
+            <a href="/admin/services-page" class="text-[11px] text-[#58a6ff] hover:underline mt-2 inline-block">Pricing manager &rarr;</a>
+        </div>
+
+        <div class="gh-box p-4">
+            <div class="flex items-center justify-between text-[#8b949e] mb-1 text-xs">
+                <span>Pending Approvals</span>
+                <i class="fa-solid fa-clock-rotate-left text-[#f85149]"></i>
+            </div>
+            <div class="text-2xl font-bold text-[#f85149] font-mono" x-text="stats ? stats.pending_deposits : '...'"></div>
+            <a href="/admin/deposits-page" class="text-[11px] text-[#58a6ff] hover:underline mt-2 inline-block">Approve deposits &rarr;</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

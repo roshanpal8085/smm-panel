@@ -1,0 +1,204 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Support Tickets | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-4" x-data="{
+    tickets: [],
+    loading: true,
+    showCreateModal: false,
+    subject: '',
+    category: 'Order Issue',
+    orderId: '',
+    message: '',
+    submitting: false,
+    error: '',
+
+    async fetchTickets() {
+        this.loading = true;
+        try {
+            const res = await fetch('/tickets');
+            const data = await res.json();
+            if (data.success) {
+                this.tickets = data.tickets;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async createTicket() {
+        if (!this.subject || !this.message) {
+            this.error = 'Please fill in subject and message';
+            return;
+        }
+
+        this.submitting = true;
+        this.error = '';
+
+        try {
+            const res = await fetch('/tickets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject: this.subject,
+                    category: this.category,
+                    order_id: this.orderId ? parseInt(this.orderId) : null,
+                    message: this.message
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast('Support ticket created successfully!', 'success');
+                this.subject = '';
+                this.orderId = '';
+                this.message = '';
+                this.showCreateModal = false;
+                this.fetchTickets();
+            } else {
+                this.error = data.detail || data.error || 'Failed to create ticket';
+            }
+        } catch(e) {
+            this.error = 'Network error during submission.';
+        } finally {
+            this.submitting = false;
+        }
+    },
+
+    init() {
+        this.fetchTickets();
+    }
+}">
+    <!-- Header -->
+    <div class="flex items-center justify-between pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Dashboard</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc]">Support Tickets</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Support Desk</h1>
+        </div>
+        <button @click="showCreateModal = true" class="gh-btn-primary text-xs">
+            <i class="fa-solid fa-plus text-xs"></i> Open Ticket
+        </button>
+    </div>
+
+    <!-- Create Ticket Modal -->
+    <div x-show="showCreateModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div @click="showCreateModal = false" class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="relative w-full max-w-lg gh-box-subtle p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-[#30363d] pb-3">
+                <span class="text-sm font-semibold text-[#f0f6fc] flex items-center gap-2">
+                    <i class="fa-solid fa-headset text-[#58a6ff]"></i> Open a New Support Ticket
+                </span>
+                <button @click="showCreateModal = false" class="text-[#8b949e] hover:text-[#f0f6fc]">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div x-show="error" class="p-3 rounded-md bg-[rgba(218,54,51,0.15)] border border-[rgba(248,81,73,0.35)] text-[#f85149] text-xs" x-text="error"></div>
+
+            <form @submit.prevent="createTicket" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Title / Subject</label>
+                    <input type="text" x-model="subject" required placeholder="Brief summary of the issue..." class="gh-input text-xs py-2">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Issue Category</label>
+                        <select x-model="category" class="gh-input text-xs py-2">
+                            <option value="Order Issue">Order Issue</option>
+                            <option value="Payment / Deposit">Payment / Deposit</option>
+                            <option value="Refill / Cancel">Refill / Cancel</option>
+                            <option value="API Integration">API Integration</option>
+                            <option value="Other Inquiry">Other Inquiry</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Linked Order ID (Optional)</label>
+                        <input type="number" x-model="orderId" placeholder="e.g. 104" class="gh-input font-mono text-xs py-2">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Issue Description</label>
+                    <textarea x-model="message" rows="4" required placeholder="Provide full details, URLs, or error codes..." class="gh-input font-mono text-xs p-3"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#30363d]">
+                    <button type="button" @click="showCreateModal = false" class="gh-btn text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" :disabled="submitting" class="gh-btn-primary text-xs">
+                        <span x-show="!submitting">Submit Ticket</span>
+                        <span x-show="submitting"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Submitting...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tickets List Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-dot text-[#3fb950]"></i>
+                <span class="font-semibold text-[#f0f6fc]">Open Tickets</span>
+                <span class="gh-counter" x-text="tickets.length"></span>
+            </div>
+            <span class="text-[11px] text-[#8b949e]">Average response: &lt; 15 mins</span>
+        </div>
+
+        <div class="divide-y divide-[#21262d] text-xs">
+            <template x-if="loading">
+                <div class="p-8 text-center text-[#8b949e]">
+                    <i class="fa-solid fa-spinner fa-spin text-lg text-[#58a6ff] mb-2"></i>
+                    <p>Loading tickets...</p>
+                </div>
+            </template>
+
+            <template x-if="!loading && tickets.length === 0">
+                <div class="p-8 text-center text-[#8b949e]">
+                    <i class="fa-solid fa-circle-check text-2xl text-[#30363d] mb-2 block"></i>
+                    <p class="font-semibold text-[#f0f6fc] mb-1">No open support tickets</p>
+                    <p class="mb-3">Everything is running smoothly. Click "Open Ticket" if you need technical assistance.</p>
+                </div>
+            </template>
+
+            <template x-for="t in tickets" :key="t.id">
+                <div class="gh-box-row flex items-start justify-between gap-3 cursor-pointer" @click="window.location.href = '/support/' + t.id">
+                    <div class="flex items-start gap-2.5 min-w-0">
+                        <div class="pt-0.5">
+                            <i class="fa-solid fa-circle-dot text-sm" :class="t.status === 'Closed' ? 'text-[#a371f7]' : 'text-[#3fb950]'"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <a :href="'/support/' + t.id" class="font-bold text-[#f0f6fc] hover:text-[#58a6ff] transition-colors truncate" x-text="t.subject"></a>
+                                <span class="gh-badge-draft text-[10px]" x-text="t.category"></span>
+                                <span x-show="t.order_id" class="text-[10px] font-mono text-[#8b949e] px-1.5 py-0.2 rounded bg-[#161b22] border border-[#21262d]" x-text="'order #' + t.order_id"></span>
+                            </div>
+                            <div class="text-[11px] text-[#8b949e] font-mono mt-0.5">
+                                <span x-text="'#' + t.id"></span> opened on <span x-text="new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 shrink-0">
+                        <span :class="{
+                            'gh-badge-open': t.status === 'Answered',
+                            'gh-badge-draft': t.status === 'Open',
+                            'gh-badge-closed': t.status === 'Closed'
+                        }" class="text-[10px]" x-text="t.status"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+{% endblock %}

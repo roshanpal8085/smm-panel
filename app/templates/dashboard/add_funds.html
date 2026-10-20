@@ -1,0 +1,598 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Add Funds & Billing | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-5" x-data="{
+    selectedMethod: '{{ 'manual_upi' if user.can_manual_upi else 'fampay' }}',
+    amount: 500,
+    manualStep: 1,
+    minDeposit: parseFloat('{{ min_deposit|default(50) }}') || 50,
+    maxUpiDeposit: parseFloat('{{ max_upi_deposit|default(1000) }}') || 1000,
+    upiId: '{{ upi_id }}',
+    utrNumber: '',
+    notes: '',
+    screenshotFile: null,
+    screenshotPreview: null,
+    deposits: [],
+    loading: false,
+    historyLoading: true,
+    error: '',
+    checkoutUrl: '',
+    depositRef: '',
+
+    get upiPaymentUrl() {
+        const amt = parseFloat(this.amount || 0).toFixed(2);
+        return `upi://pay?pa=${this.upiId}&pn=SMM%20Prime&am=${amt}&cu=INR`;
+    },
+
+    get upiQrCodeUrl() {
+        return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(this.upiPaymentUrl)}`;
+    },
+
+    goToStep2() {
+        this.error = '';
+        const amt = parseFloat(this.amount);
+        if (isNaN(amt) || amt <= 0) {
+            this.error = 'Please enter a valid deposit amount.';
+            return;
+        }
+        if (amt < this.minDeposit) {
+            this.error = `Minimum deposit amount is ₹${this.minDeposit}.`;
+            return;
+        }
+        if (amt > this.maxUpiDeposit) {
+            this.error = `Maximum UPI deposit per transaction is ₹${this.maxUpiDeposit}.`;
+            return;
+        }
+        this.manualStep = 2;
+    },
+
+    goToStep1() {
+        this.manualStep = 1;
+        this.error = '';
+    },
+
+    handleScreenshot(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const allowed = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!allowed.includes(file.type)) {
+            this.error = 'Only PNG, JPG, or WEBP images are accepted.';
+            e.target.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            this.error = 'Screenshot must be under 5 MB.';
+            e.target.value = '';
+            return;
+        }
+        this.screenshotFile = file;
+        this.screenshotPreview = URL.createObjectURL(file);
+    },
+
+    async fetchDeposits() {
+        this.historyLoading = true;
+        try {
+            const res = await fetch('/wallet/deposits');
+            const data = await res.json();
+            if (data.success) this.deposits = data.deposits;
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.historyLoading = false;
+        }
+    },
+
+    copyText(text) {
+        navigator.clipboard.writeText(text);
+        showToast('Copied to clipboard!', 'info');
+    },
+
+    async submitManualDeposit() {
+        if (!this.amount || this.amount <= 0) {
+            this.error = 'Please enter a valid deposit amount.';
+            return;
+        }
+        if (!this.utrNumber.trim()) {
+            this.error = '12-Digit UTR / Transaction Reference ID is required.';
+            return;
+        }
+
+        this.loading = true;
+        this.error = '';
+
+        try {
+            const form = new FormData();
+            form.append('amount', this.amount);
+            form.append('utr_number', this.utrNumber.trim());
+            if (this.notes.trim()) form.append('notes', this.notes.trim());
+            if (this.screenshotFile) form.append('screenshot', this.screenshotFile);
+
+            const res = await fetch('/wallet/manual-deposit', {
+                method: 'POST',
+                body: form
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showToast('Payment submitted successfully! Balance will be credited upon UTR verification.', 'success');
+                this.utrNumber = '';
+                this.notes = '';
+                this.screenshotFile = null;
+                this.screenshotPreview = null;
+                const ssInput = document.getElementById('screenshot-input');
+                if (ssInput) ssInput.value = '';
+                this.manualStep = 1;
+                this.fetchDeposits();
+            } else {
+                this.error = data.detail || data.error || 'Submission failed.';
+            }
+        } catch(e) {
+            this.error = 'Network error. Please try again.';
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async initiateAutoDeposit() {
+        if (!this.amount || this.amount <= 0) {
+            this.error = 'Please enter a valid amount.';
+            return;
+        }
+        this.loading = true;
+        this.error = '';
+        try {
+            const res = await fetch('/wallet/deposit-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: parseFloat(this.amount), payment_method: this.selectedMethod })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                this.depositRef = data.reference;
+                if (data.checkout_url) {
+                    this.checkoutUrl = data.checkout_url;
+                    showToast('Payment intent created! Redirecting...', 'info');
+                    setTimeout(() => { window.location.href = data.checkout_url; }, 1200);
+                } else {
+                    showToast('Deposit intent created. Awaiting payment.', 'info');
+                }
+                this.fetchDeposits();
+            } else {
+                this.error = data.detail || 'Failed to initiate payment.';
+            }
+        } catch(e) {
+            this.error = 'Network error. Please try again.';
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    init() {
+        this.fetchDeposits();
+    },
+
+    statusBadge(s) {
+        if (s === 'Completed') return 'gh-badge-open';
+        if (s === 'Pending Verification' || s === 'Processing') return 'gh-badge-draft';
+        if (s === 'Pending') return 'gh-badge-draft';
+        if (s === 'Rejected') return 'gh-badge-closed';
+        return 'gh-badge-draft';
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Billing</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc]">Add Funds</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Wallet Top Up & Credits</h1>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+            <span class="text-[#8b949e]">Available Balance:</span>
+            <span class="font-mono font-bold text-base text-[#3fb950]">₹{{ "%.2f"|format(user.balance|float) }}</span>
+        </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div x-show="error" x-cloak class="p-3 rounded-md bg-[rgba(218,54,51,0.15)] border border-[rgba(248,81,73,0.35)] text-[#f85149] text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span x-text="error"></span>
+        </div>
+        <button @click="error = ''" class="text-[#f85149] hover:text-[#f0f6fc]"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Payment Method Selector Tabs -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {% if user.can_manual_upi %}
+        <button type="button" @click="selectedMethod = 'manual_upi'; manualStep = 1; error = ''"
+            :class="selectedMethod === 'manual_upi' 
+                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
+                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
+            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                  :class="selectedMethod === 'manual_upi' 
+                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                      : 'border-[#484f58] bg-[#0d1117]'">
+                <span x-show="selectedMethod === 'manual_upi'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <i class="fa-solid fa-qrcode text-base" :class="selectedMethod === 'manual_upi' ? 'text-[#58a6ff]' : 'text-[#8b949e]'"></i>
+            <span class="text-xs font-semibold">UPI Manual</span>
+            <span class="text-[10px] text-[#3fb950] font-mono font-medium">0% Fee · Direct QR</span>
+        </button>
+        {% endif %}
+
+        <button type="button" @click="selectedMethod = 'fampay'; error = ''"
+            :class="selectedMethod === 'fampay' 
+                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
+                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
+            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                  :class="selectedMethod === 'fampay' 
+                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                      : 'border-[#484f58] bg-[#0d1117]'">
+                <span x-show="selectedMethod === 'fampay'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <i class="fa-solid fa-bolt text-base" :class="selectedMethod === 'fampay' ? 'text-[#3fb950]' : 'text-[#8b949e]'"></i>
+            <span class="text-xs font-semibold">Dynamic QR</span>
+            <span class="text-[10px] text-[#8b949e] font-mono">Instant Auto</span>
+        </button>
+
+        <button type="button" @click="selectedMethod = 'binancepay'; error = ''"
+            :class="selectedMethod === 'binancepay' 
+                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
+                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
+            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                  :class="selectedMethod === 'binancepay' 
+                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                      : 'border-[#484f58] bg-[#0d1117]'">
+                <span x-show="selectedMethod === 'binancepay'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <i class="fa-solid fa-coins text-base" :class="selectedMethod === 'binancepay' ? 'text-[#f3ba2f]' : 'text-[#8b949e]'"></i>
+            <span class="text-xs font-semibold">Binance Pay</span>
+            <span class="text-[10px] text-[#f3ba2f] font-mono font-medium">0% Fee · USDT</span>
+        </button>
+
+        <button type="button" @click="selectedMethod = 'cryptomus'; error = ''"
+            :class="selectedMethod === 'cryptomus' 
+                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
+                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
+            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                  :class="selectedMethod === 'cryptomus' 
+                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                      : 'border-[#484f58] bg-[#0d1117]'">
+                <span x-show="selectedMethod === 'cryptomus'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <i class="fa-brands fa-bitcoin text-base" :class="selectedMethod === 'cryptomus' ? 'text-[#d29922]' : 'text-[#8b949e]'"></i>
+            <span class="text-xs font-semibold">Cryptocurrency</span>
+            <span class="text-[10px] text-[#8b949e] font-mono">USDT / BTC</span>
+        </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MANUAL UPI FLOW: STEP 1 (Enter Amount)                   -->
+    <!-- ======================================================== -->
+    <div x-show="selectedMethod === 'manual_upi' && manualStep === 1" class="gh-box p-6 space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-[#21262d]">
+            <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-[#58a6ff]/20 text-[#58a6ff] flex items-center justify-center font-bold text-xs font-mono">1</span>
+                <div>
+                    <h3 class="text-sm font-bold text-[#f0f6fc]">Step 1: Enter Recharge Amount</h3>
+                    <p class="text-[11px] text-[#8b949e]">Enter your desired deposit amount to generate an exact-amount UPI QR code.</p>
+                </div>
+            </div>
+            <span class="gh-badge-open text-[11px]">
+                <i class="fa-solid fa-shield-check mr-1"></i> Admin-Verified · 0% Fee
+            </span>
+        </div>
+
+        <div class="max-w-md mx-auto space-y-4 pt-2">
+            <div>
+                <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Enter Deposit Amount (₹)</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] font-bold text-sm font-mono">₹</span>
+                    <input type="number" x-model.number="amount" :min="minDeposit" :max="maxUpiDeposit" step="1" required 
+                           class="gh-input pl-8 pr-4 py-2 font-mono text-base font-bold text-[#3fb950]" placeholder="500">
+                </div>
+                <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                    <span class="text-[11px] text-[#8b949e] mr-1">Quick Select:</span>
+                    <template x-for="preset in [100, 250, 500, 1000]">
+                        <button type="button" @click="amount = preset" 
+                                class="gh-btn py-1 px-2.5 text-xs font-mono"
+                                :class="amount === preset ? 'border-[#58a6ff] text-[#58a6ff] bg-[#1f6feb]/10 font-bold' : ''"
+                                x-text="'₹' + preset"></button>
+                    </template>
+                </div>
+                <p class="text-[11px] text-[#8b949e] mt-2 font-mono">
+                    Limits: Min <span class="text-[#f0f6fc] font-semibold">₹<span x-text="minDeposit"></span></span> · Max <span class="text-[#f0f6fc] font-semibold">₹<span x-text="maxUpiDeposit"></span></span> per transaction
+                </p>
+            </div>
+
+            <!-- Generate QR Button -->
+            <button type="button" @click="goToStep2()" 
+                    class="gh-btn-primary w-full py-2.5 text-sm font-semibold flex items-center justify-center gap-2 shadow-md">
+                <span>Generate Payment QR for ₹<span x-text="amount || 0"></span></span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+
+            <!-- Guide Steps Box -->
+            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-[#21262d] text-center text-xs">
+                <div class="p-2 rounded bg-[#161b22] border border-[#21262d]">
+                    <span class="block text-[#58a6ff] font-mono font-bold text-[10px]">1. ENTER</span>
+                    <span class="text-[11px] text-[#8b949e]">Amount</span>
+                </div>
+                <div class="p-2 rounded bg-[#161b22] border border-[#21262d]">
+                    <span class="block text-[#d29922] font-mono font-bold text-[10px]">2. SCAN</span>
+                    <span class="text-[11px] text-[#8b949e]">Amount QR</span>
+                </div>
+                <div class="p-2 rounded bg-[#161b22] border border-[#21262d]">
+                    <span class="block text-[#3fb950] font-mono font-bold text-[10px]">3. SUBMIT</span>
+                    <span class="text-[11px] text-[#8b949e]">12-Digit UTR</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MANUAL UPI FLOW: STEP 2 (Scan Amount QR + Submit Details) -->
+    <!-- ======================================================== -->
+    <div x-show="selectedMethod === 'manual_upi' && manualStep === 2" x-cloak class="space-y-4">
+        <!-- Step 2 Amount Banner with Edit Option -->
+        <div class="gh-box-subtle p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-full bg-[#3fb950]/20 text-[#3fb950] flex items-center justify-center font-bold text-xs font-mono">2</span>
+                <div>
+                    <span class="text-xs text-[#8b949e]">Payment Amount Generated:</span>
+                    <div class="text-lg font-bold text-[#3fb950] font-mono leading-tight">
+                        ₹<span x-text="parseFloat(amount).toFixed(2)"></span>
+                        <span class="text-[10px] text-[#8b949e] font-normal ml-1">INR</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" @click="goToStep1()" class="gh-btn text-xs py-1 px-3 self-start sm:self-auto">
+                <i class="fa-solid fa-pen-to-square text-xs mr-1 text-[#58a6ff]"></i> Change Amount
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Left Card: Dynamic Amount QR Code -->
+            <div class="gh-box p-5 space-y-4 flex flex-col justify-between">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-[#f0f6fc] flex items-center gap-1.5">
+                            <i class="fa-solid fa-qrcode text-[#58a6ff]"></i> Scan & Pay
+                        </span>
+                        <span class="text-[11px] font-mono text-[#3fb950] font-bold">
+                            Amount: ₹<span x-text="parseFloat(amount).toFixed(2)"></span>
+                        </span>
+                    </div>
+
+                    <!-- Dynamic QR Code for that specific amount -->
+                    <div class="flex flex-col items-center justify-center py-2">
+                        <div class="w-48 h-48 bg-white p-2.5 rounded-lg shadow-md flex items-center justify-center border-2 border-[#58a6ff]">
+                            <img :src="upiQrCodeUrl" alt="UPI QR Code" class="w-full h-full object-contain rounded" loading="lazy">
+                        </div>
+                        <p class="text-[11px] text-[#8b949e] mt-2 text-center">
+                            Scan with GPay, PhonePe, Paytm, BHIM or CRED
+                        </p>
+                    </div>
+
+                    <!-- Direct UPI Pay Link for Mobile Devices -->
+                    <a :href="upiPaymentUrl" class="gh-btn w-full py-2 text-xs font-semibold text-center flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-mobile-screen-button text-[#3fb950]"></i>
+                        <span>Pay Directly in UPI App</span>
+                    </a>
+
+                    <!-- Copy UPI ID Row -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-[#8b949e] mb-1">Or Pay via UPI ID</label>
+                        <div class="flex items-center gap-2 p-2 rounded bg-[#0d1117] border border-[#30363d] font-mono text-xs">
+                            <span class="text-[#58a6ff] font-bold flex-1 select-all truncate" x-text="upiId"></span>
+                            <button type="button" @click="copyText(upiId)" class="gh-btn py-0.5 px-2.5 text-[11px]">
+                                <i class="fa-regular fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Helpful Steps -->
+                <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-[11px] text-[#8b949e] space-y-1">
+                    <p><strong class="text-[#f0f6fc]">1.</strong> Pay exact ₹<span x-text="parseFloat(amount).toFixed(2)"></span> via QR / UPI.</p>
+                    <p><strong class="text-[#f0f6fc]">2.</strong> Copy the 12-digit UTR/UPI Ref number from your receipt.</p>
+                    <p><strong class="text-[#f0f6fc]">3.</strong> Enter the UTR in the form on the right and submit.</p>
+                </div>
+            </div>
+
+            <!-- Right Card: Submit Payment Details Form -->
+            <div class="gh-box p-5 space-y-4">
+                <div class="flex items-center justify-between pb-2 border-b border-[#21262d]">
+                    <span class="text-xs font-bold text-[#f0f6fc] flex items-center gap-1.5">
+                        <i class="fa-solid fa-receipt text-[#3fb950]"></i> Submit Payment Details
+                    </span>
+                    <span class="gh-badge-draft text-[10px]">Step 2 of 2</span>
+                </div>
+
+                <div class="space-y-3.5 text-xs">
+                    <!-- Confirmed Amount Display -->
+                    <div>
+                        <label class="block font-semibold text-[#8b949e] mb-1">Confirmed Payment Amount</label>
+                        <div class="p-2.5 rounded bg-[#0d1117] border border-[#30363d] font-mono text-sm font-bold text-[#3fb950] flex items-center justify-between">
+                            <span>₹<span x-text="parseFloat(amount).toFixed(2)"></span></span>
+                            <span class="text-[10px] text-[#8b949e] font-normal">INR</span>
+                        </div>
+                    </div>
+
+                    <!-- 12-Digit UTR Number -->
+                    <div>
+                        <label class="block font-semibold text-[#f0f6fc] mb-1">
+                            12-Digit UTR / Transaction Reference ID <span class="text-[#f85149]">*</span>
+                        </label>
+                        <input type="text" x-model="utrNumber" required placeholder="e.g. 428192837461" 
+                               class="gh-input font-mono text-xs py-2 uppercase" maxlength="30">
+                        <span class="block text-[10px] text-[#8b949e] mt-1 font-mono">Found in your payment receipt details as "UPI Ref ID" or "UTR".</span>
+                    </div>
+
+                    <!-- Screenshot Upload (Optional) -->
+                    <div>
+                        <label class="block font-semibold text-[#f0f6fc] mb-1">
+                            Payment Screenshot <span class="text-[#8b949e] font-normal">(Optional)</span>
+                        </label>
+                        <div class="p-3 rounded-md bg-[#0d1117] border border-dashed border-[#484f58] hover:border-[#8b949e] transition-colors text-center">
+                            <input id="screenshot-input" type="file" accept="image/png,image/jpeg,image/webp" 
+                                   @change="handleScreenshot($event)" class="text-xs text-[#8b949e] file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#21262d] file:text-[#c9d1d9] hover:file:bg-[#30363d]">
+                            <template x-if="screenshotPreview">
+                                <div class="mt-2 flex items-center justify-center gap-2">
+                                    <img :src="screenshotPreview" alt="Screenshot Preview" class="h-14 w-auto rounded border border-[#30363d]">
+                                    <span class="text-[11px] text-[#3fb950] font-mono">Preview Loaded</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Note (Optional) -->
+                    <div>
+                        <label class="block font-semibold text-[#f0f6fc] mb-1">Note (Optional)</label>
+                        <input type="text" x-model="notes" placeholder="e.g. Paid via Google Pay" class="gh-input text-xs py-2">
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="button" @click="submitManualDeposit()" :disabled="loading" 
+                            class="gh-btn-primary w-full py-2.5 text-xs font-semibold disabled:opacity-50 shadow-md">
+                        <span x-show="!loading"><i class="fa-solid fa-check-circle mr-1"></i> Submit UTR for Verification</span>
+                        <span x-show="loading"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Verifying Submission...</span>
+                    </button>
+
+                    <p class="text-[11px] text-[#8b949e] text-center">
+                        <i class="fa-solid fa-clock text-[10px] mr-1"></i> Verified & credited automatically or by admin within 5–15 mins.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- AUTOMATED GATEWAYS (Dynamic UPI / Cryptomus)             -->
+    <!-- ======================================================== -->
+    <div x-show="selectedMethod !== 'manual_upi'" x-cloak class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Info Left -->
+        <div class="lg:col-span-2 gh-box p-5 space-y-3">
+            <template x-if="selectedMethod === 'fampay'">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 font-bold text-sm text-[#f0f6fc]">
+                        <i class="fa-solid fa-bolt text-[#3fb950]"></i> Dynamic Instant UPI Gateway
+                    </div>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        Generates a single-use payment intent with instant callback verification. Balance is automatically credited immediately after successful UPI transfer.
+                    </p>
+                    <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1">
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Instant 0-second auto credit</p>
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Works with GPay, PhonePe, Paytm, CRED</p>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="selectedMethod === 'binancepay'">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 font-bold text-sm text-[#f0f6fc]">
+                        <i class="fa-solid fa-coins text-[#f3ba2f]"></i> Binance Pay Merchant Gateway
+                    </div>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        Pay directly from your Binance App (Scan QR) or Binance Web browser wallet with 0% network gas fees. Automatic real-time INR to USDT conversion.
+                    </p>
+                    <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1">
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> 0% Gas Fees via Binance Pay App & Web</p>
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Instant 0-second auto credit via official Merchant API</p>
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Supports Binance App QR scan & web payment redirect</p>
+                    </div>
+                </div>
+            </template>
+
+            <template x-if="selectedMethod === 'cryptomus'">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 font-bold text-sm text-[#f0f6fc]">
+                        <i class="fa-brands fa-bitcoin text-[#d29922]"></i> Cryptomus Digital Currency
+                    </div>
+                    <p class="text-xs text-[#8b949e] leading-relaxed">
+                        Accepts USDT (TRC20, ERC20, BEP20, Polygon), BTC, ETH, TON, and all major cryptocurrencies with automated blockchain confirmations.
+                    </p>
+                    <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1">
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Global 24/7 automated credit</p>
+                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Zero volatility risk on stablecoins</p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Checkout Right -->
+        <div class="gh-box p-5 space-y-4 h-fit">
+            <span class="text-xs font-bold text-[#f0f6fc] block pb-2 border-b border-[#21262d]">Initiate Deposit</span>
+            <div>
+                <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Amount (₹)</label>
+                <input type="number" x-model.number="amount" min="50" max="1000000" step="1" required class="gh-input font-mono text-xs py-2">
+                <div class="flex items-center gap-1 mt-2 flex-wrap">
+                    <template x-for="preset in [100, 250, 500, 1000]">
+                        <button type="button" @click="amount = preset" class="gh-btn py-0.5 px-2 text-[11px] font-mono" x-text="'₹' + preset"></button>
+                    </template>
+                </div>
+            </div>
+
+            <button type="button" @click="initiateAutoDeposit()" :disabled="loading" class="gh-btn-primary w-full py-2.5 text-xs font-semibold disabled:opacity-50">
+                <span x-show="!loading"><i class="fa-solid fa-bolt mr-1"></i> Proceed to Checkout</span>
+                <span x-show="loading"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Generating Intent...</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Deposit History (Invoices / Billing Table) -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between">
+            <span class="text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                <i class="fa-solid fa-clock-rotate-left text-[#8b949e]"></i> Deposit Invoices & Records
+            </span>
+            <button @click="fetchDeposits()" class="text-xs text-[#58a6ff] hover:underline flex items-center gap-1">
+                <i class="fa-solid fa-arrows-rotate text-[10px]"></i> Refresh
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22]/50 border-b border-[#21262d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-4 font-mono">Reference</th>
+                        <th class="py-2.5 px-4">Method</th>
+                        <th class="py-2.5 px-4 font-mono">UTR / TxID</th>
+                        <th class="py-2.5 px-4 font-mono">Amount</th>
+                        <th class="py-2.5 px-4">Status</th>
+                        <th class="py-2.5 px-4 text-right font-mono">Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="historyLoading">
+                        <tr><td colspan="6" class="py-8 text-center text-[#8b949e]">Loading transaction log...</td></tr>
+                    </template>
+                    <template x-if="!historyLoading && deposits.length === 0">
+                        <tr><td colspan="6" class="py-8 text-center text-[#8b949e]">No deposit records recorded yet.</td></tr>
+                    </template>
+                    <template x-for="d in deposits" :key="d.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2.5 px-4 font-mono text-[11px] font-bold text-[#58a6ff]" x-text="d.reference"></td>
+                            <td class="py-2.5 px-4 capitalize" x-text="(d.payment_method || 'UPI').replace('_', ' ')"></td>
+                            <td class="py-2.5 px-4 font-mono text-[11px] text-[#c9d1d9]" x-text="d.utr_number || '—'"></td>
+                            <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono text-xs" x-text="'₹' + parseFloat(d.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                            <td class="py-2.5 px-4">
+                                <span :class="statusBadge(d.status)" class="text-[10px]" x-text="d.status"></span>
+                            </td>
+                            <td class="py-2.5 px-4 text-right font-mono text-[11px] text-[#8b949e] whitespace-nowrap" x-text="new Date(d.created_at).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,237 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Deposit Approvals | Admin Console | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    deposits: [],
+    loading: true,
+    filterStatus: 'all',
+    rejectModal: false,
+    rejectId: null,
+    rejectRef: '',
+    rejectAmount: '',
+    rejectReason: '',
+    rejectLoading: false,
+    screenshotModal: false,
+    screenshotUrl: '',
+
+    async fetchDeposits() {
+        this.loading = true;
+        try {
+            let url = '/admin/deposits?limit=100';
+            if (this.filterStatus && this.filterStatus !== 'all') url += '&status=' + encodeURIComponent(this.filterStatus);
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success) this.deposits = data.deposits;
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async approve(d) {
+        if (!confirm(`Approve ₹${parseFloat(d.amount).toFixed(2)} deposit for user '${d.username}'?\n\nRef: ${d.reference}\n\nThis will credit their wallet immediately.`)) return;
+        try {
+            const res = await fetch(`/admin/deposits/${d.id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_notes: null })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.fetchDeposits();
+            } else {
+                showToast(data.detail || 'Approval failed', 'error');
+            }
+        } catch(e) {
+            showToast('Error approving deposit', 'error');
+        }
+    },
+
+    openReject(d) {
+        this.rejectId = d.id;
+        this.rejectRef = d.reference;
+        this.rejectAmount = d.amount;
+        this.rejectReason = '';
+        this.rejectModal = true;
+    },
+
+    async confirmReject() {
+        if (!this.rejectReason.trim() || this.rejectReason.trim().length < 3) {
+            showToast('Please enter a rejection reason (min 3 characters).', 'error');
+            return;
+        }
+        this.rejectLoading = true;
+        try {
+            const res = await fetch(`/admin/deposits/${this.rejectId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: this.rejectReason.trim() })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'info');
+                this.rejectModal = false;
+                this.fetchDeposits();
+            } else {
+                showToast(data.detail || 'Rejection failed', 'error');
+            }
+        } catch(e) {
+            showToast('Error rejecting deposit', 'error');
+        } finally {
+            this.rejectLoading = false;
+        }
+    },
+
+    viewScreenshot(path) {
+        this.screenshotUrl = '/' + path.replace(/\\/g, '/');
+        this.screenshotModal = true;
+    },
+
+    statusClass(s) {
+        if (s === 'Completed') return 'gh-badge-open';
+        if (s === 'Pending Verification' || s === 'Processing') return 'gh-badge-draft';
+        if (s === 'Pending') return 'gh-badge-draft';
+        if (s === 'Rejected') return 'gh-badge-closed';
+        return 'gh-badge-draft';
+    },
+
+    canAction(s) {
+        return ['Pending', 'Pending Verification', 'Processing'].includes(s);
+    },
+
+    init() { this.fetchDeposits(); }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Governance</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc] font-mono">deposits</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Deposit Approvals & Invoices</h1>
+        </div>
+        <button @click="fetchDeposits()" class="gh-btn text-xs">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> Refresh
+        </button>
+    </div>
+
+    <!-- Status Filter Tabs -->
+    <div class="flex flex-wrap gap-1.5 text-xs">
+        <template x-for="tab in ['all', 'Pending Verification', 'Pending', 'Completed', 'Rejected']">
+            <button @click="filterStatus = tab; fetchDeposits()"
+                :class="filterStatus === tab ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e] font-semibold' : 'bg-[#0d1117] text-[#8b949e] hover:text-[#f0f6fc] border-[#30363d]'"
+                class="px-2.5 py-1 rounded-md border text-xs capitalize transition-colors"
+                x-text="tab === 'all' ? 'All Deposits' : tab">
+            </button>
+        </template>
+    </div>
+
+    <!-- Deposits Table Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-3 font-mono">Ref / ID</th>
+                        <th class="py-2.5 px-3">User</th>
+                        <th class="py-2.5 px-3">Method</th>
+                        <th class="py-2.5 px-3 font-mono">UTR / TxID</th>
+                        <th class="py-2.5 px-3 font-mono">Amount</th>
+                        <th class="py-2.5 px-3">Proof</th>
+                        <th class="py-2.5 px-3">Status</th>
+                        <th class="py-2.5 px-3 text-right font-mono">Date</th>
+                        <th class="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr><td colspan="9" class="py-8 text-center text-[#8b949e]">Loading deposits...</td></tr>
+                    </template>
+                    <template x-if="!loading && deposits.length === 0">
+                        <tr><td colspan="9" class="py-8 text-center text-[#8b949e]">No deposits found for this filter.</td></tr>
+                    </template>
+                    <template x-for="d in deposits" :key="d.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2 px-3">
+                                <span class="font-mono text-xs text-[#58a6ff] font-bold" x-text="d.reference"></span>
+                            </td>
+                            <td class="py-2 px-3 font-semibold text-[#f0f6fc]" x-text="d.username"></td>
+                            <td class="py-2 px-3 text-xs capitalize" x-text="(d.payment_method || 'UPI').replace('_', ' ')"></td>
+                            <td class="py-2 px-3 font-mono text-xs font-bold text-[#f0f6fc] select-all" x-text="d.utr_number || '—'"></td>
+                            <td class="py-2 px-3 font-bold text-[#3fb950] font-mono text-xs" x-text="'₹' + parseFloat(d.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                            <td class="py-2 px-3">
+                                <template x-if="d.screenshot_path">
+                                    <button @click="viewScreenshot(d.screenshot_path)" class="text-[#58a6ff] hover:underline flex items-center gap-1 font-mono text-[11px]">
+                                        <i class="fa-solid fa-image"></i> View
+                                    </button>
+                                </template>
+                                <template x-if="!d.screenshot_path">
+                                    <span class="text-[#6e7681]">—</span>
+                                </template>
+                            </td>
+                            <td class="py-2 px-3">
+                                <span :class="statusClass(d.status)" class="text-[10px]" x-text="d.status"></span>
+                            </td>
+                            <td class="py-2 px-3 text-right font-mono text-[11px] text-[#8b949e] whitespace-nowrap" x-text="new Date(d.created_at).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})"></td>
+                            <td class="py-2 px-3 text-right whitespace-nowrap">
+                                <template x-if="canAction(d.status)">
+                                    <div class="inline-flex items-center gap-1">
+                                        <button @click="approve(d)" class="gh-btn-primary py-0.5 px-2 text-[11px]">
+                                            <i class="fa-solid fa-check"></i> Approve
+                                        </button>
+                                        <button @click="openReject(d)" class="gh-btn-danger py-0.5 px-2 text-[11px]">
+                                            <i class="fa-solid fa-xmark"></i> Reject
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="!canAction(d.status)">
+                                    <span class="text-[11px] text-[#8b949e] font-mono italic" x-text="d.status === 'Completed' ? 'Credited' : 'Closed'"></span>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div x-show="rejectModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="w-full max-w-md gh-box-subtle p-5 shadow-2xl space-y-3" @click.stop>
+            <div class="flex items-center justify-between pb-2 border-b border-[#30363d]">
+                <h3 class="text-xs font-bold text-[#f85149] uppercase">Reject Deposit: <span x-text="rejectRef"></span></h3>
+                <button @click="rejectModal = false" class="text-[#8b949e] hover:text-[#f0f6fc]"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-[#f0f6fc] mb-1">Reason</label>
+                <textarea x-model="rejectReason" rows="3" placeholder="UTR not found, duplicate, etc." class="gh-input text-xs p-2.5"></textarea>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-[#30363d]">
+                <button @click="rejectModal = false" class="gh-btn text-xs">Cancel</button>
+                <button @click="confirmReject()" :disabled="rejectLoading" class="gh-btn-danger text-xs">
+                    <span x-show="!rejectLoading">Confirm Rejection</span>
+                    <span x-show="rejectLoading"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screenshot Modal -->
+    <div x-show="screenshotModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-pointer" @click="screenshotModal = false">
+        <div class="max-w-2xl w-full gh-box overflow-hidden shadow-2xl" @click.stop>
+            <div class="flex items-center justify-between bg-[#161b22] border-b border-[#30363d] px-4 py-2 text-xs">
+                <span class="font-bold text-[#f0f6fc]">Payment Proof</span>
+                <button @click="screenshotModal = false" class="text-[#8b949e] hover:text-[#f0f6fc]">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <img :src="screenshotUrl" alt="Payment proof screenshot" class="w-full object-contain max-h-[70vh] bg-[#0d1117]">
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,833 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Service Catalog & Pricing Engine | Admin Console | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-6" x-data="{
+    services: [],
+    categories: [],
+    providers: [],
+    categoryMargins: {},
+    totalCount: 0,
+    search: '',
+    selectedCategory: 'all',
+    selectedProvider: 'all',
+    selectedStatus: 'all',
+    selectedPlatform: 'all',
+    limit: 50,
+    offset: 0,
+    currentPage: 1,
+    loading: true,
+    syncing: false,
+
+    platforms: [
+        { id: 'all', name: 'All', icon: 'fa-solid fa-bars', colorClass: 'text-slate-400 group-hover:text-white', keywords: [] },
+        { id: 'youtube', name: 'YouTube', icon: 'fa-brands fa-youtube', colorClass: 'text-red-500', keywords: ['youtube', 'yt ', 'yt-', 'yt:'] },
+        { id: 'facebook', name: 'Facebook', icon: 'fa-brands fa-facebook', colorClass: 'text-blue-500', keywords: ['facebook', 'fb ', 'fb-', 'fb:'] },
+        { id: 'instagram', name: 'Instagram', icon: 'fa-brands fa-instagram', colorClass: 'text-pink-500', keywords: ['instagram', 'ig ', 'ig-', 'ig:'] },
+        { id: 'tiktok', name: 'TikTok', icon: 'fa-brands fa-tiktok', colorClass: 'text-slate-200 group-hover:text-white', keywords: ['tiktok', 'tik tok'] },
+        { id: 'telegram', name: 'Telegram', icon: 'fa-brands fa-telegram', colorClass: 'text-sky-400', keywords: ['telegram', 'tg ', 'tg-', 'tg:'] },
+        { id: 'spotify', name: 'Spotify', icon: 'fa-brands fa-spotify', colorClass: 'text-emerald-400', keywords: ['spotify'] },
+        { id: 'threads', name: 'Threads', icon: 'fa-brands fa-threads', colorClass: 'text-slate-300', keywords: ['threads'] },
+        { id: 'twitter', name: 'Twitter', icon: 'fa-brands fa-x-twitter', colorClass: 'text-slate-200 group-hover:text-white', keywords: ['twitter', ' x ', 'x.com', 'x -', 'tweet', '𝕩'] },
+        { id: 'linkedin', name: 'LinkedIn', icon: 'fa-brands fa-linkedin', colorClass: 'text-blue-400', keywords: ['linkedin'] },
+        { id: 'kick', name: 'Kick', icon: 'fa-solid fa-k', colorClass: 'text-emerald-400', keywords: ['kick'] },
+        { id: 'other', name: 'Other', icon: 'fa-solid fa-plus', colorClass: 'text-slate-400 group-hover:text-white', keywords: [] }
+    ],
+
+    matchesPlatform(catName, platformId) {
+        if (!catName) return false;
+        if (platformId === 'all') return true;
+        const cl = catName.toLowerCase();
+        const mainKeywords = [
+            'youtube', 'yt ', 'yt-', 'yt:', 'facebook', 'fb ', 'fb-', 'fb:',
+            'instagram', 'ig ', 'ig-', 'ig:', 'tiktok', 'tik tok',
+            'telegram', 'tg ', 'tg-', 'tg:', 'spotify', 'threads',
+            'twitter', ' x ', 'x.com', 'x -', 'tweet', '𝕩', 'linkedin', 'kick'
+        ];
+        if (platformId === 'other') {
+            return !mainKeywords.some(k => cl.includes(k));
+        }
+        const p = this.platforms.find(x => x.id === platformId);
+        if (!p || !p.keywords || p.keywords.length === 0) return true;
+        return p.keywords.some(k => cl.includes(k));
+    },
+
+    get filteredCategories() {
+        if (this.selectedPlatform === 'all') return this.categories;
+        return this.categories.filter(c => this.matchesPlatform(c, this.selectedPlatform));
+    },
+
+    selectPlatform(platId) {
+        this.selectedPlatform = platId;
+        this.selectedCategory = 'all';
+        this.offset = 0;
+        this.currentPage = 1;
+        this.fetchCatalog();
+    },
+
+    // Selection
+    selectedIds: [],
+    selectAll: false,
+
+    // Modals
+    showPriceModal: false,
+    selectedService: null,
+    newRate: '',
+    priceNotes: '',
+
+    showBulkPriceModal: false,
+    bulkAction: 'increase_percent',
+    bulkValue: '',
+
+    showGlobalMarkupModal: false,
+    globalMarkupVal: '',
+
+    showCategoryMarkupModal: false,
+    catMarkupName: '',
+    catMarkupVal: '',
+
+    showAuditModal: false,
+    auditLogs: [],
+    auditLoading: false,
+
+    async fetchCatalog() {
+        this.loading = true;
+        this.selectedIds = [];
+        this.selectAll = false;
+        try {
+            let url = `/services/admin/catalog?limit=${this.limit}&offset=${this.offset}`;
+            if (this.search) url += `&search=${encodeURIComponent(this.search)}`;
+            if (this.selectedCategory !== 'all') url += `&category=${encodeURIComponent(this.selectedCategory)}`;
+            if (this.selectedPlatform !== 'all') url += `&platform=${encodeURIComponent(this.selectedPlatform)}`;
+            if (this.selectedProvider !== 'all') url += `&provider=${encodeURIComponent(this.selectedProvider)}`;
+            if (this.selectedStatus !== 'all') url += `&status_filter=${encodeURIComponent(this.selectedStatus)}`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success) {
+                this.services = data.services;
+                this.totalCount = data.total;
+                this.globalMarkupVal = data.global_markup_percent;
+                this.categoryMargins = data.category_margins || {};
+                if (data.providers && data.providers.length > 0) {
+                    this.providers = data.providers;
+                }
+            }
+        } catch(e) {
+            console.error(e);
+            showToast('Failed to load service catalog', 'error');
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    async fetchCategories() {
+        try {
+            const res = await fetch('/services/categories');
+            const data = await res.json();
+            if (data.success) {
+                this.categories = data.categories.map(c => c.name);
+            }
+        } catch(e) {}
+    },
+
+    toggleSelectAll() {
+        if (this.selectAll) {
+            this.selectedIds = this.services.map(s => s.id);
+        } else {
+            this.selectedIds = [];
+        }
+    },
+
+    async syncFromProvider(providerSlug = null) {
+        const target = providerSlug || (this.selectedProvider !== 'all' ? this.selectedProvider : 'all');
+        const targetLabel = target === 'all' ? 'All Active Providers' : target;
+        if (!confirm(`Fetch and synchronize services from ${targetLabel}?\n\nThis will update provider rates, check availability, and import new services without altering your custom manual pricing overrides.`)) return;
+        this.syncing = true;
+        try {
+            showToast(`Syncing service catalog from ${targetLabel}...`, 'info');
+            let url = '/services/sync';
+            if (target !== 'all') {
+                url += `?provider=${encodeURIComponent(target)}`;
+            }
+            const res = await fetch(url, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Sync complete! Created: ${data.created}, Updated: ${data.updated}`, 'success');
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Sync failed', 'error');
+            }
+        } catch(e) {
+            showToast('Sync error occurred', 'error');
+        } finally {
+            this.syncing = false;
+        }
+    },
+
+    openEditPrice(s) {
+        this.selectedService = s;
+        this.newRate = s.selling_rate;
+        this.priceNotes = '';
+        this.showPriceModal = true;
+    },
+
+    async savePrice() {
+        if (!this.selectedService || !this.newRate) return;
+        try {
+            const res = await fetch(`/services/${this.selectedService.id}/price`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selling_rate: parseFloat(this.newRate),
+                    notes: this.priceNotes || null
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Service #${this.selectedService.id} selling price updated to ₹${data.new_price}`, 'success');
+                this.showPriceModal = false;
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Failed to update price', 'error');
+            }
+        } catch(e) {
+            showToast('Price update failed', 'error');
+        }
+    },
+
+    async resetToAutoPrice(s) {
+        if (!confirm(`Reset Service #${s.id} to automatic pricing based on provider cost + default markup?`)) return;
+        try {
+            const res = await fetch(`/services/${s.id}/reset-price`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Reset failed', 'error');
+            }
+        } catch(e) {
+            showToast('Reset failed', 'error');
+        }
+    },
+
+    async toggleVisibility(s) {
+        const nextState = !s.customer_visible;
+        try {
+            const res = await fetch(`/services/${s.id}/toggle`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ customer_visible: nextState })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                s.customer_visible = data.customer_visible;
+                s.is_orderable = data.is_orderable;
+                showToast(`Service #${s.id} customer visibility: ${s.customer_visible ? 'Visible' : 'Hidden'}`, 'info');
+            }
+        } catch(e) {
+            showToast('Visibility toggle failed', 'error');
+        }
+    },
+
+    async toggleActive(s) {
+        const nextState = !s.is_active;
+        try {
+            const res = await fetch(`/services/${s.id}/toggle`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: nextState })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                s.is_active = data.is_active;
+                s.is_orderable = data.is_orderable;
+                showToast(`Service #${s.id} status: ${s.is_active ? 'Enabled' : 'Disabled'}`, 'info');
+            }
+        } catch(e) {
+            showToast('Status toggle failed', 'error');
+        }
+    },
+
+    async applyBulkVisibility(action) {
+        if (!this.selectedIds.length) {
+            showToast('Please select at least one service.', 'error');
+            return;
+        }
+        if (!confirm(`Apply '${action.toUpperCase()}' to ${this.selectedIds.length} selected services?`)) return;
+        try {
+            const res = await fetch('/services/admin/bulk-visibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    service_ids: this.selectedIds,
+                    action: action
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Bulk action failed', 'error');
+            }
+        } catch(e) {
+            showToast('Bulk action error', 'error');
+        }
+    },
+
+    async applyBulkPricing() {
+        if (!this.selectedIds.length && this.selectedCategory === 'all') {
+            showToast('Select services using checkboxes or choose a category.', 'error');
+            return;
+        }
+        const desc = this.selectedIds.length ? `${this.selectedIds.length} selected services` : `all services in category '${this.selectedCategory}'`;
+        if (!confirm(`Apply bulk pricing action (${this.bulkAction}) to ${desc}?`)) return;
+
+        try {
+            const payload = {
+                action: this.bulkAction,
+                value: this.bulkValue ? parseFloat(this.bulkValue) : null
+            };
+            if (this.selectedIds.length) {
+                payload.service_ids = this.selectedIds;
+            } else {
+                payload.category = this.selectedCategory;
+            }
+
+            const res = await fetch('/services/admin/bulk-price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.showBulkPriceModal = false;
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Bulk pricing update failed', 'error');
+            }
+        } catch(e) {
+            showToast('Bulk update error', 'error');
+        }
+    },
+
+    async saveGlobalMarkup() {
+        if (!this.globalMarkupVal || parseFloat(this.globalMarkupVal) < 0) return;
+        try {
+            const res = await fetch('/services/admin/global-markup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ markup_percent: parseFloat(this.globalMarkupVal) })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.showGlobalMarkupModal = false;
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Failed to update markup', 'error');
+            }
+        } catch(e) {
+            showToast('Error updating global markup', 'error');
+        }
+    },
+
+    async saveCategoryMarkup() {
+        if (!this.catMarkupName || !this.catMarkupVal) return;
+        try {
+            const res = await fetch('/services/admin/category-markup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: this.catMarkupName,
+                    markup_percent: parseFloat(this.catMarkupVal)
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success');
+                this.showCategoryMarkupModal = false;
+                this.fetchCatalog();
+            } else {
+                showToast(data.detail || 'Failed to update category markup', 'error');
+            }
+        } catch(e) {
+            showToast('Error updating category markup', 'error');
+        }
+    },
+
+    async viewAudits(s) {
+        this.selectedService = s;
+        this.showAuditModal = true;
+        this.auditLoading = true;
+        try {
+            const res = await fetch(`/services/admin/price-audits?service_id=${s.id}&limit=20`);
+            const data = await res.json();
+            if (data.success) {
+                this.auditLogs = data.logs;
+            }
+        } catch(e) {
+            showToast('Failed to load audit history', 'error');
+        } finally {
+            this.auditLoading = false;
+        }
+    },
+
+    nextPage() {
+        if (this.offset + this.limit < this.totalCount) {
+            this.offset += this.limit;
+            this.currentPage++;
+            this.fetchCatalog();
+        }
+    },
+
+    prevPage() {
+        if (this.offset > 0) {
+            this.offset = Math.max(0, this.offset - this.limit);
+            this.currentPage--;
+            this.fetchCatalog();
+        }
+    },
+
+    init() {
+        this.fetchCatalog();
+        this.fetchCategories();
+    }
+}">
+
+    <!-- Page Title & Header Actions -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-400">Inventory & Yield Engine</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30" x-text="totalCount + ' Services'"></span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Catalog & Pricing Architecture</h1>
+            <p class="text-xs text-slate-400 mt-1">Provider cost verification, dynamic & manual markups, gross profit monitoring, and customer orderability controls.</p>
+        </div>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <!-- Global Markup Modal Button -->
+            <button @click="showGlobalMarkupModal = true" class="px-3.5 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+                <i class="fa-solid fa-percent text-amber-400"></i>
+                <span>Global Markup: <strong class="text-white" x-text="globalMarkupVal + '%'"></strong></span>
+            </button>
+
+            <!-- Category Markup Button -->
+            <button @click="showCategoryMarkupModal = true" class="px-3.5 py-2 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition-all">
+                <i class="fa-solid fa-layer-group text-cyan-400"></i>
+                <span>Category Margin</span>
+            </button>
+
+            <!-- Sync Button -->
+            <button @click="syncFromProvider()" :disabled="syncing" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-extrabold text-xs shadow-lg shadow-amber-600/25 flex items-center gap-2 disabled:opacity-50 transition-all">
+                <i :class="syncing ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-arrows-rotate'"></i>
+                <span x-text="syncing ? 'Syncing...' : 'Sync Provider API'"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Control Toolbar -->
+    <div class="admin-card p-4 rounded-2xl border border-white/10 space-y-4">
+        <!-- Platform Selection Grid (12 Platforms) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            <template x-for="plat in platforms" :key="plat.id">
+                <button type="button" 
+                        @click="selectPlatform(plat.id)"
+                        class="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold transition-all text-left justify-start cursor-pointer group select-none"
+                        :class="selectedPlatform === plat.id 
+                            ? 'bg-amber-500 text-black font-extrabold border-amber-400 shadow-md ring-1 ring-amber-400/50' 
+                            : 'bg-dark-900/80 text-slate-300 border-white/10 hover:border-white/20 hover:bg-dark-800 hover:text-white'">
+                    <span class="w-4 h-4 flex items-center justify-center text-xs shrink-0"
+                          :class="selectedPlatform === plat.id ? 'text-black font-bold' : plat.colorClass">
+                        <template x-if="plat.id === 'kick'">
+                            <span class="font-black text-xs font-mono">K</span>
+                        </template>
+                        <template x-if="plat.id !== 'kick'">
+                            <i :class="plat.icon"></i>
+                        </template>
+                    </span>
+                    <span class="truncate" x-text="plat.name"></span>
+                </button>
+            </template>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-white/5">
+            <!-- Search -->
+            <div class="relative lg:col-span-2">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" x-model="search" @input.debounce.350ms="offset = 0; currentPage = 1; fetchCatalog()" placeholder="Search by name, ID, or provider ID..." class="w-full bg-dark-900 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors">
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+                <select x-model="selectedCategory" @change="offset = 0; currentPage = 1; fetchCatalog()" class="w-full bg-dark-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+                    <option value="all">All Categories</option>
+                    <template x-for="c in filteredCategories" :key="c">
+                        <option :value="c" x-text="c"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- Orderability / Status Filter -->
+            <div>
+                <select x-model="selectedStatus" @change="offset = 0; currentPage = 1; fetchCatalog()" class="w-full bg-dark-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+                    <option value="all">All Service Statuses</option>
+                    <option value="active">Active & Orderable</option>
+                    <option value="disabled">Admin Disabled</option>
+                    <option value="hidden">Hidden from Customers</option>
+                    <option value="unavailable">Provider Unavailable</option>
+                </select>
+            </div>
+
+            <!-- Provider Filter -->
+            <div>
+                <select x-model="selectedProvider" @change="offset = 0; currentPage = 1; fetchCatalog()" class="w-full bg-dark-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-amber-500">
+                    <option value="all">All Providers</option>
+                    <template x-for="p in providers" :key="p.slug">
+                        <option :value="p.slug" x-text="p.name + ' API'"></option>
+                    </template>
+                </select>
+            </div>
+        </div>
+
+        <!-- Bulk Action Bar (Shows when items are selected) -->
+        <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-white/5 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="text-slate-400">Selected: <strong class="text-amber-400" x-text="selectedIds.length"></strong> of <span x-text="services.length"></span> on this page</span>
+                <template x-if="selectedIds.length > 0">
+                    <div class="inline-flex items-center gap-1.5 ml-2">
+                        <button @click="applyBulkVisibility('show')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
+                            <i class="fa-solid fa-eye mr-1"></i> Make Visible
+                        </button>
+                        <button @click="applyBulkVisibility('hide')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold">
+                            <i class="fa-solid fa-eye-slash mr-1"></i> Hide
+                        </button>
+                        <button @click="applyBulkVisibility('enable')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-semibold">
+                            <i class="fa-solid fa-check mr-1"></i> Enable
+                        </button>
+                        <button @click="applyBulkVisibility('disable')" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold">
+                            <i class="fa-solid fa-ban mr-1"></i> Disable
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button @click="showBulkPriceModal = true" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-calculator"></i> Bulk Price Adjust
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catalog Services Table -->
+    <div class="admin-card rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr class="bg-dark-900/90 border-b border-white/10 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th class="py-3 px-3 w-10 text-center">
+                            <input type="checkbox" x-model="selectAll" @change="toggleSelectAll()" class="rounded bg-dark-900 border-white/20 text-amber-500 focus:ring-0">
+                        </th>
+                        <th class="py-3 px-3 w-16">ID</th>
+                        <th class="py-3 px-3">Service & Category</th>
+                        <th class="py-3 px-3 w-28">Provider Cost</th>
+                        <th class="py-3 px-3 w-28">Selling Price</th>
+                        <th class="py-3 px-3 w-28">Markup / Profit</th>
+                        <th class="py-3 px-3 w-24 text-center">Orderable</th>
+                        <th class="py-3 px-3 w-24 text-center">Visibility</th>
+                        <th class="py-3 px-3 w-28 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5 text-slate-300">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="9" class="py-12 text-center text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading catalog and yield metrics...
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="!loading && services.length === 0">
+                        <tr>
+                            <td colspan="9" class="py-12 text-center text-slate-500">
+                                <i class="fa-solid fa-inbox text-3xl block mb-2 text-slate-600"></i>
+                                No services found matching the criteria.
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-for="s in services" :key="s.id">
+                        <tr class="hover:bg-white/[0.02] transition-colors" :class="{'bg-amber-500/[0.03]': selectedIds.includes(s.id)}">
+                            <!-- Checkbox -->
+                            <td class="py-3 px-3 text-center">
+                                <input type="checkbox" :value="s.id" x-model="selectedIds" class="rounded bg-dark-900 border-white/20 text-amber-500 focus:ring-0">
+                            </td>
+
+                            <!-- ID & Mapping -->
+                            <td class="py-3 px-3">
+                                <span class="font-mono text-xs font-bold text-amber-400 block" x-text="'#' + s.id"></span>
+                                <span class="text-[10px] text-slate-500 font-mono" x-text="'P#' + s.provider_service_id"></span>
+                            </td>
+
+                            <!-- Name & Category -->
+                            <td class="py-3 px-3">
+                                <span class="font-semibold text-white text-xs block truncate max-w-sm" x-text="s.name" :title="s.name"></span>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded font-medium" x-text="s.category"></span>
+                                    <span class="text-[10px] text-slate-500 font-mono" x-text="'Min: ' + s.min + ' | Max: ' + s.max"></span>
+                                    <template x-if="s.price_override">
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded">Manual Override</span>
+                                    </template>
+                                </div>
+                            </td>
+
+                            <!-- Provider Cost -->
+                            <td class="py-3 px-3 font-mono text-xs text-slate-300">
+                                <span class="text-white font-bold" x-text="'₹' + parseFloat(s.provider_rate).toFixed(4)"></span>
+                                <span class="block text-[10px] text-slate-500" x-text="s.provider_name"></span>
+                            </td>
+
+                            <!-- Selling Price -->
+                            <td class="py-3 px-3 font-mono text-xs">
+                                <span class="font-extrabold text-emerald-400" x-text="'₹' + parseFloat(s.selling_rate).toFixed(4)"></span>
+                                <span class="block text-[10px] text-slate-500">per 1K</span>
+                            </td>
+
+                            <!-- Markup & Gross Profit -->
+                            <td class="py-3 px-3 text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-amber-300 font-mono text-[11px]" x-text="'+' + parseFloat(s.effective_markup).toFixed(1) + '%'"></span>
+                                    <span class="text-[10px] text-slate-400 font-mono" x-text="'(' + parseFloat(s.margin_percent).toFixed(1) + '% mrg)'"></span>
+                                </div>
+                                <span class="block text-[10px] text-emerald-300/80 font-mono font-medium" x-text="'Profit: ₹' + parseFloat(s.gross_profit).toFixed(4)"></span>
+                            </td>
+
+                            <!-- Orderability (Composite status) -->
+                            <td class="py-3 px-3 text-center">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                    :class="s.is_orderable ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30'"
+                                    x-text="s.is_orderable ? 'Orderable' : 'Blocked'">
+                                </span>
+                            </td>
+
+                            <!-- Customer Visibility Toggle -->
+                            <td class="py-3 px-3 text-center">
+                                <button @click="toggleVisibility(s)" class="px-2 py-1 rounded-lg text-xs transition-colors"
+                                    :class="s.customer_visible ? 'bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'">
+                                    <i :class="s.customer_visible ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash'"></i>
+                                </button>
+                                <button @click="toggleActive(s)" class="ml-1 px-2 py-1 rounded-lg text-xs transition-colors"
+                                    :class="s.is_active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'"
+                                    :title="s.is_active ? 'Admin Enabled' : 'Admin Disabled'">
+                                    <i :class="s.is_active ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'"></i>
+                                </button>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="py-3 px-3 text-right whitespace-nowrap space-x-1">
+                                <button @click="openEditPrice(s)" class="p-1.5 rounded-lg bg-dark-800 hover:bg-amber-500/20 text-amber-300 hover:text-white border border-white/5 transition-colors" title="Edit Selling Price">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <template x-if="s.price_override">
+                                    <button @click="resetToAutoPrice(s)" class="p-1.5 rounded-lg bg-dark-800 hover:bg-cyan-500/20 text-cyan-400 hover:text-white border border-white/5 transition-colors" title="Reset to Auto Dynamic Price">
+                                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                                    </button>
+                                </template>
+                                <button @click="viewAudits(s)" class="p-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-400 hover:text-white border border-white/5 transition-colors" title="Price Audit History">
+                                    <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="p-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Showing <span class="font-bold text-white" x-text="offset + 1"></span> - 
+                <span class="font-bold text-white" x-text="Math.min(offset + limit, totalCount)"></span> of 
+                <span class="font-bold text-amber-400" x-text="totalCount"></span> services
+            </div>
+            <div class="flex items-center gap-2">
+                <button @click="prevPage()" :disabled="offset === 0" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> Prev
+                </button>
+                <span class="px-2 font-mono text-white" x-text="'Page ' + currentPage"></span>
+                <button @click="nextPage()" :disabled="offset + limit >= totalCount" class="px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed">
+                    Next <i class="fa-solid fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 1: Edit Single Selling Rate -->
+    <div x-show="showPriceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" @keydown.escape.window="showPriceModal = false">
+        <div class="w-full max-w-md admin-glass rounded-3xl border border-amber-500/25 p-7 shadow-2xl space-y-4" @click.stop>
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="text-base font-black text-white">Manual Selling Price Override</h3>
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="selectedService ? selectedService.name : ''"></p>
+                </div>
+                <button @click="showPriceModal = false" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-dark-900 border border-white/5 space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Provider Cost (1K):</span>
+                    <strong class="text-white font-mono" x-text="selectedService ? '₹' + parseFloat(selectedService.provider_rate).toFixed(4) : ''"></strong>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Current Selling Rate:</span>
+                    <strong class="text-emerald-400 font-mono" x-text="selectedService ? '₹' + parseFloat(selectedService.selling_rate).toFixed(4) : ''"></strong>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">New Customer Selling Rate / 1K (₹)</label>
+                <input type="number" step="0.0001" min="0.0001" x-model="newRate" required class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Audit Note (Optional)</label>
+                <input type="text" x-model="priceNotes" placeholder="e.g. Promotional discount, competitor match" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button @click="showPriceModal = false" class="flex-1 py-2.5 rounded-xl bg-dark-800 border border-white/10 text-slate-300 hover:text-white font-bold text-xs">Cancel</button>
+                <button @click="savePrice()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-black font-extrabold text-xs shadow-lg shadow-amber-600/25">Save Price</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Bulk Pricing Actions -->
+    <div x-show="showBulkPriceModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" @keydown.escape.window="showBulkPriceModal = false">
+        <div class="w-full max-w-md admin-glass rounded-3xl border border-amber-500/25 p-7 shadow-2xl space-y-4" @click.stop>
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="text-base font-black text-white">Bulk Price Adjustment</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Target: <span class="text-amber-400 font-bold" x-text="selectedIds.length ? selectedIds.length + ' Selected Services' : 'Category: ' + selectedCategory"></span>
+                    </p>
+                </div>
+                <button @click="showBulkPriceModal = false" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Action Type</label>
+                <select x-model="bulkAction" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-amber-500">
+                    <option value="increase_percent">Increase Price by Percentage (%)</option>
+                    <option value="decrease_percent">Decrease Price by Percentage (%)</option>
+                    <option value="increase_fixed">Increase Price by Fixed Amount (₹)</option>
+                    <option value="decrease_fixed">Decrease Price by Fixed Amount (₹)</option>
+                    <option value="apply_markup">Apply Specific Markup on Provider Cost (%)</option>
+                    <option value="reset_auto">Reset to Default Automatic Pricing</option>
+                </select>
+            </div>
+
+            <div x-show="bulkAction !== 'reset_auto'">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                    <span x-text="bulkAction.includes('percent') || bulkAction === 'apply_markup' ? 'Percentage (%)' : 'Amount (₹)'"></span>
+                </label>
+                <input type="number" step="0.01" min="0" x-model="bulkValue" placeholder="e.g. 15" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button @click="showBulkPriceModal = false" class="flex-1 py-2.5 rounded-xl bg-dark-800 border border-white/10 text-slate-300 hover:text-white font-bold text-xs">Cancel</button>
+                <button @click="applyBulkPricing()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-black font-extrabold text-xs shadow-lg shadow-amber-600/25">Apply Bulk Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Global Markup Setting -->
+    <div x-show="showGlobalMarkupModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" @keydown.escape.window="showGlobalMarkupModal = false">
+        <div class="w-full max-w-sm admin-glass rounded-3xl border border-amber-500/25 p-7 shadow-2xl space-y-4" @click.stop>
+            <h3 class="text-base font-black text-white">Global Default Markup</h3>
+            <p class="text-xs text-slate-400">Controls initial selling rates for newly imported services and any service using default automatic pricing.</p>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Default Markup (%)</label>
+                <input type="number" step="0.1" min="0" x-model="globalMarkupVal" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-amber-500">
+                <span class="block text-[10px] text-slate-500 mt-1">Services with manual price overrides will not be altered.</span>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button @click="showGlobalMarkupModal = false" class="flex-1 py-2.5 rounded-xl bg-dark-800 border border-white/10 text-slate-300 hover:text-white font-bold text-xs">Cancel</button>
+                <button @click="saveGlobalMarkup()" class="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-black font-extrabold text-xs">Update Global</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Category-Level Markup -->
+    <div x-show="showCategoryMarkupModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" @keydown.escape.window="showCategoryMarkupModal = false">
+        <div class="w-full max-w-md admin-glass rounded-3xl border border-amber-500/25 p-7 shadow-2xl space-y-4" @click.stop>
+            <h3 class="text-base font-black text-white">Category Markup Override</h3>
+            <p class="text-xs text-slate-400">Set specific markup percentages for an entire category (e.g. Instagram Followers 75%, YouTube Views 40%).</p>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Select Category</label>
+                <select x-model="catMarkupName" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-amber-500">
+                    <option value="">-- Choose Category --</option>
+                    <template x-for="c in categories" :key="c">
+                        <option :value="c" x-text="c"></option>
+                    </template>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Category Markup (%)</label>
+                <input type="number" step="0.1" min="0" x-model="catMarkupVal" placeholder="e.g. 65" class="w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button @click="showCategoryMarkupModal = false" class="flex-1 py-2.5 rounded-xl bg-dark-800 border border-white/10 text-slate-300 hover:text-white font-bold text-xs">Cancel</button>
+                <button @click="saveCategoryMarkup()" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs">Set Category Markup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Price Audit History Logs -->
+    <div x-show="showAuditModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm" @keydown.escape.window="showAuditModal = false">
+        <div class="w-full max-w-xl admin-glass rounded-3xl border border-amber-500/25 p-7 shadow-2xl space-y-4 max-h-[85vh] flex flex-col" @click.stop>
+            <div class="flex items-start justify-between border-b border-white/5 pb-3">
+                <div>
+                    <h3 class="text-base font-black text-white">Price Modification Audit Trail</h3>
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="selectedService ? selectedService.name : ''"></p>
+                </div>
+                <button @click="showAuditModal = false" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 space-y-2">
+                <template x-if="auditLoading">
+                    <p class="py-8 text-center text-xs text-slate-400">Loading audit history...</p>
+                </template>
+                <template x-if="!auditLoading && auditLogs.length === 0">
+                    <p class="py-8 text-center text-xs text-slate-500">No manual price adjustments recorded yet for this service.</p>
+                </template>
+                <template x-for="log in auditLogs" :key="log.id">
+                    <div class="p-3 rounded-xl bg-dark-900 border border-white/5 text-xs flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-white" x-text="log.change_type"></span>
+                            <span class="block text-[11px] text-slate-400" x-text="log.details || 'No details provided'"></span>
+                            <span class="text-[10px] text-slate-500" x-text="'By: ' + log.admin_name + ' · ' + new Date(log.created_at).toLocaleString()"></span>
+                        </div>
+                        <div class="text-right font-mono">
+                            <span class="text-slate-500 line-through" x-text="'₹' + log.old_price"></span>
+                            <span class="block text-emerald-400 font-bold" x-text="'₹' + log.new_price"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="pt-2 border-t border-white/5">
+                <button @click="showAuditModal = false" class="w-full py-2.5 rounded-xl bg-dark-800 text-slate-300 font-bold text-xs">Close Audit Log</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

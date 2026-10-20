@@ -1,0 +1,213 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Order History | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="space-y-4" x-data="{
+    statusFilter: 'all',
+    search: '',
+    orders: [],
+    loading: true,
+
+    async fetchOrders() {
+        this.loading = true;
+        try {
+            let url = `/orders?status=${this.statusFilter}`;
+            if (this.search) {
+                url += `&search=${encodeURIComponent(this.search)}`;
+            }
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.success) {
+                this.orders = data.orders;
+            }
+        } catch(e) {
+            console.error(e);
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    setFilter(status) {
+        this.statusFilter = status;
+        this.fetchOrders();
+    },
+
+    async refreshStatus(orderId) {
+        try {
+            const res = await fetch(`/orders/${orderId}/status`);
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Order #${orderId} status: ${data.status}`, 'info');
+                this.fetchOrders();
+            }
+        } catch(e) {
+            showToast('Failed to check status', 'error');
+        }
+    },
+
+    async requestRefill(orderId) {
+        if (!confirm(`Request refill for Order #${orderId}?`)) return;
+        try {
+            const res = await fetch(`/orders/${orderId}/refill`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Refill queued! Refill ID: ${data.refill_id}`, 'success');
+                this.fetchOrders();
+            } else {
+                showToast(data.detail || data.error || 'Refill unavailable', 'error');
+            }
+        } catch(e) {
+            showToast('Refill request failed', 'error');
+        }
+    },
+
+    async requestCancel(orderId) {
+        if (!confirm(`Cancel Order #${orderId}?`)) return;
+        try {
+            const res = await fetch(`/orders/${orderId}/cancel`, { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(`Order #${orderId} canceled`, 'success');
+                this.fetchOrders();
+            } else {
+                showToast(data.detail || data.error || 'Cancel failed', 'error');
+            }
+        } catch(e) {
+            showToast('Cancel request failed', 'error');
+        }
+    },
+
+    init() {
+        this.fetchOrders();
+    }
+}">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#30363d]">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+                <span>Dashboard</span>
+                <span>/</span>
+                <span class="text-[#f0f6fc]">Order History</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Order History</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button @click="fetchOrders()" class="gh-btn text-xs" title="Refresh Order Log">
+                <i class="fa-solid fa-arrows-rotate text-xs"></i> Refresh
+            </button>
+            <a href="/new-order" class="gh-btn-primary text-xs">
+                <i class="fa-solid fa-plus text-xs"></i> New Order
+            </a>
+        </div>
+    </div>
+
+    <!-- GitHub Box Container -->
+    <div class="gh-box overflow-hidden">
+        <!-- Box Header: Filter Tabs & Search Bar -->
+        <div class="gh-box-header flex flex-col md:flex-row md:items-center justify-between gap-3 bg-[#161b22]">
+            <!-- Status Tabs -->
+            <div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+                <template x-for="st in ['all', 'Pending', 'In progress', 'Processing', 'Completed', 'Partial', 'Canceled']" :key="st">
+                    <button @click="setFilter(st)" 
+                        :class="statusFilter === st 
+                            ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] font-bold shadow-sm' 
+                            : 'bg-[#0d1117] text-[#8b949e] border-[#30363d] hover:text-[#f0f6fc] hover:border-[#8b949e] hover:bg-[#21262d]'"
+                        class="px-3 py-1 rounded-md border text-xs capitalize transition-all whitespace-nowrap"
+                        x-text="st === 'all' ? 'All Orders' : st">
+                    </button>
+                </template>
+            </div>
+
+            <!-- Search input in Header -->
+            <div class="relative w-full md:w-60">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                <input type="text" x-model="search" @input.debounce.300ms="fetchOrders()" placeholder="Search ID, link, service..." class="gh-input text-xs py-1 pl-7 pr-3">
+            </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-[#161b22]/50 border-b border-[#21262d] text-[11px] font-semibold text-[#8b949e]">
+                        <th class="py-2.5 px-4 font-mono">ID</th>
+                        <th class="py-2.5 px-4">Service</th>
+                        <th class="py-2.5 px-4">Target Link</th>
+                        <th class="py-2.5 px-4 font-mono">Charge</th>
+                        <th class="py-2.5 px-4 font-mono">Quantity</th>
+                        <th class="py-2.5 px-4 font-mono">Start / Rem</th>
+                        <th class="py-2.5 px-4">Status</th>
+                        <th class="py-2.5 px-4 text-right">Updated</th>
+                        <th class="py-2.5 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                    <template x-if="loading">
+                        <tr>
+                            <td colspan="9" class="py-12 text-center text-[#8b949e]">
+                                <i class="fa-solid fa-spinner fa-spin text-lg text-[#58a6ff] mb-2"></i>
+                                <p>Querying order index...</p>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <template x-if="!loading && orders.length === 0">
+                        <tr>
+                            <td colspan="9" class="py-12 text-center text-[#8b949e]">
+                                <i class="fa-solid fa-inbox text-2xl mb-2 block text-[#30363d]"></i>
+                                No matching orders found.
+                            </td>
+                        </tr>
+                    </template>
+
+                    <template x-for="o in orders" :key="o.id">
+                        <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
+                            <td class="py-2.5 px-4 font-mono font-bold text-[#58a6ff]" x-text="'#' + o.id"></td>
+                            <td class="py-2.5 px-4 max-w-xs">
+                                <span class="font-medium text-[#f0f6fc] block truncate" x-text="o.service_name"></span>
+                            </td>
+                            <td class="py-2.5 px-4 max-w-xs">
+                                <a :href="o.link" target="_blank" class="text-[#58a6ff] hover:underline font-mono truncate block text-[11px]" x-text="o.link"></a>
+                            </td>
+                            <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono" x-text="'₹' + o.charge"></td>
+                            <td class="py-2.5 px-4 font-mono text-[#f0f6fc]" x-text="o.quantity"></td>
+                            <td class="py-2.5 px-4 font-mono text-[11px] text-[#8b949e]">
+                                <span x-text="o.start_count !== null ? o.start_count : '-'"></span> / 
+                                <span x-text="o.remains !== null ? o.remains : '-'"></span>
+                            </td>
+                            <td class="py-2.5 px-4">
+                                <span :class="{
+                                    'gh-badge-merged': o.status === 'Completed',
+                                    'gh-badge-open': o.status === 'Processing' || o.status === 'In progress',
+                                    'gh-badge-draft': o.status === 'Pending' || o.status === 'Partial',
+                                    'gh-badge-closed': o.status === 'Canceled' || o.status === 'Cancelled'
+                                }" x-text="o.status"></span>
+                            </td>
+                            <td class="py-2.5 px-4 text-right text-[11px] text-[#8b949e] font-mono whitespace-nowrap" x-text="new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })"></td>
+                            <td class="py-2.5 px-4 text-right whitespace-nowrap space-x-1">
+                                <!-- Refresh -->
+                                <button @click="refreshStatus(o.id)" class="gh-btn py-0.5 px-2 text-[11px]" title="Poll Status">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                                <!-- Refill -->
+                                <template x-if="o.refill_available && (o.status === 'Completed' || o.status === 'Partial')">
+                                    <button @click="requestRefill(o.id)" class="gh-btn py-0.5 px-2 text-[11px] text-[#3fb950]" title="Refill">
+                                        <i class="fa-solid fa-shield-rotate"></i>
+                                    </button>
+                                </template>
+                                <!-- Cancel -->
+                                <template x-if="o.cancel_available && o.status === 'Pending'">
+                                    <button @click="requestCancel(o.id)" class="gh-btn-danger py-0.5 px-2 text-[11px]" title="Cancel">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

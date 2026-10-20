@@ -1,0 +1,141 @@
+{% extends "dashboard_layout.html" %}
+
+{% block title %}Developer & Reseller API Keys | SMM PRIME{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-4xl mx-auto space-y-4" x-data="{
+    apiKey: '{{ user.api_key or '' }}',
+    apiUrl: window.location.origin + '/api/v2',
+    activeTab: 'curl',
+
+    copyKey() {
+        navigator.clipboard.writeText(this.apiKey);
+        showToast('Personal API key copied to clipboard!', 'info');
+    },
+
+    async regenerate() {
+        if (!confirm('Are you sure you want to regenerate your API token? All active integrations and bots using this token will fail immediately.')) return;
+        try {
+            const res = await fetch('/auth/regenerate-api-key', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                this.apiKey = data.api_key;
+                showToast('New personal API token generated!', 'success');
+            }
+        } catch(e) {
+            showToast('Failed to regenerate key', 'error');
+        }
+    }
+}">
+    <!-- Header -->
+    <div class="pb-3 border-b border-[#30363d]">
+        <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+            <span>Dashboard</span>
+            <span>/</span>
+            <span class="text-[#f0f6fc]">API Keys</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Reseller API Access</h1>
+        <p class="text-xs text-[#8b949e] mt-1">Universal REST API credentials for connecting your reseller panels, bots, and automated scripts.</p>
+    </div>
+
+    <!-- API Token Box -->
+    <div class="gh-box p-4 space-y-4">
+        <div>
+            <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Your API Key</label>
+            <div class="flex items-center gap-2">
+                <input type="text" readonly :value="apiKey" class="gh-input font-mono text-xs select-all py-1.5 text-[#58a6ff]">
+                <button type="button" @click="copyKey()" class="gh-btn text-xs py-1.5 shrink-0">
+                    <i class="fa-regular fa-copy text-xs"></i> Copy
+                </button>
+                <button type="button" @click="regenerate()" class="gh-btn-danger text-xs py-1.5 shrink-0">
+                    <i class="fa-solid fa-arrows-rotate text-xs"></i> Regenerate
+                </button>
+            </div>
+            <p class="text-[11px] text-[#8b949e] mt-1.5 font-mono">Keep this API key confidential. Never share it publicly.</p>
+        </div>
+
+        <div class="pt-2 border-t border-[#21262d]">
+            <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Universal Endpoint</label>
+            <input type="text" readonly :value="apiUrl" class="gh-input font-mono text-xs select-all py-1.5 text-[#f0f6fc]">
+        </div>
+    </div>
+
+    <!-- Interactive Code Docs Box -->
+    <div class="gh-box overflow-hidden">
+        <div class="gh-box-header flex items-center justify-between">
+            <span class="text-xs font-semibold text-[#f0f6fc]">Client Implementation Samples</span>
+            <div class="flex items-center gap-1">
+                <button @click="activeTab = 'curl'" :class="activeTab === 'curl' ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e]' : 'text-[#8b949e] border-transparent'" class="px-2 py-0.5 rounded border text-xs font-mono font-medium">cURL</button>
+                <button @click="activeTab = 'python'" :class="activeTab === 'python' ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e]' : 'text-[#8b949e] border-transparent'" class="px-2 py-0.5 rounded border text-xs font-mono font-medium">Python</button>
+                <button @click="activeTab = 'php'" :class="activeTab === 'php' ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e]' : 'text-[#8b949e] border-transparent'" class="px-2 py-0.5 rounded border text-xs font-mono font-medium">PHP</button>
+                <button @click="activeTab = 'node'" :class="activeTab === 'node' ? 'bg-[#21262d] text-[#f0f6fc] border-[#8b949e]' : 'text-[#8b949e] border-transparent'" class="px-2 py-0.5 rounded border text-xs font-mono font-medium">Node.js</button>
+            </div>
+        </div>
+
+        <div class="p-4 bg-[#010409] font-mono text-xs overflow-x-auto text-[#c9d1d9] leading-relaxed">
+            <div x-show="activeTab === 'curl'">
+                <p class="text-[#8b949e] mb-1.5"># 1. Query Current Account Balance</p>
+                <pre class="text-[#58a6ff]">curl -X POST <span x-text="apiUrl"></span> \
+  -d "key="<span x-text="apiKey"></span> \
+  -d "action=balance"</pre>
+
+                <p class="text-[#8b949e] mt-4 mb-1.5"># 2. Dispatch a New Order Campaign</p>
+                <pre class="text-[#3fb950]">curl -X POST <span x-text="apiUrl"></span> \
+  -d "key="<span x-text="apiKey"></span> \
+  -d "action=add" \
+  -d "service=1" \
+  -d "link=https://instagram.com/p/yourpost" \
+  -d "quantity=1000"</pre>
+            </div>
+
+            <div x-show="activeTab === 'python'" x-cloak>
+                <pre class="text-[#f0f6fc]">import requests
+
+API_URL = "<span x-text="apiUrl"></span>"
+API_KEY = "<span x-text="apiKey"></span>"
+
+payload = {
+    "key": API_KEY,
+    "action": "add",
+    "service": 1,
+    "link": "https://instagram.com/p/sample",
+    "quantity": 1000
+}
+
+response = requests.post(API_URL, data=payload)
+print(response.json())</pre>
+            </div>
+
+            <div x-show="activeTab === 'php'" x-cloak>
+                <pre class="text-[#f0f6fc]">&lt;?php
+$apiUrl = '<span x-text="apiUrl"></span>';
+$apiKey = '<span x-text="apiKey"></span>';
+
+$ch = curl_init($apiUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, [
+    'key' => $apiKey,
+    'action' => 'services'
+]);
+$result = curl_exec($ch);
+curl_close($ch);
+echo $result;
+?&gt;</pre>
+            </div>
+
+            <div x-show="activeTab === 'node'" x-cloak>
+                <pre class="text-[#f0f6fc]">import axios from 'axios';
+
+const params = new URLSearchParams({
+  key: '<span x-text="apiKey"></span>',
+  action: 'status',
+  order: '104'
+});
+
+const res = await axios.post('<span x-text="apiUrl"></span>', params);
+console.log(res.data);</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
