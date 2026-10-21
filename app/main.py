@@ -51,6 +51,25 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Scheduler start notice: {e}")
 
+    # 3. Auto-sync services if database has 0 services
+    import asyncio
+    async def _auto_seed_services():
+        try:
+            from app.database import SessionLocal
+            from app.models import Service
+            from app.services.provider_sync import import_services_from_all_providers
+            from sqlalchemy import func, select
+            with SessionLocal() as db:
+                count = db.scalar(select(func.count(Service.id))) or 0
+                if count == 0:
+                    print("Services table empty on startup; importing catalogue from active providers...")
+                    import_services_from_all_providers(db)
+                    print("Initial catalogue import completed successfully!")
+        except Exception as e:
+            print(f"Catalogue auto-seed notice: {e}")
+
+    asyncio.create_task(_auto_seed_services())
+
     yield
 
     # 3. Shutdown

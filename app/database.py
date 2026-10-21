@@ -138,28 +138,33 @@ def run_migrations():
                 db.add(models.SystemSetting(key=key, value=val, description=f"Default {key}"))
         db.commit()
 
-        # Seed default vipsmmpro provider if not present
+        # Seed or update default vipsmmpro provider
         import os as _os
+        _api_url = _os.getenv("PROVIDER_API_URL", "https://vipsmmpro.com/api/v2")
+        _api_key = _os.getenv("PROVIDER_API_KEY", "166ca903b0abc7e2ff6c0b4d0b746c6b")
+
         default_provider = db.query(models.ProviderSetting).filter(
             models.ProviderSetting.slug == "vipsmmpro"
         ).first()
         if not default_provider:
-            _api_url = _os.getenv("PROVIDER_API_URL", "")
-            _api_key = _os.getenv("PROVIDER_API_KEY", "")
-            if _api_url and _api_key:
-                db.add(models.ProviderSetting(
-                    name="VipSmmPro",
-                    slug="vipsmmpro",
-                    api_url=_api_url,
-                    api_key=_api_key,
-                    is_active=True,
-                    is_default=True,
-                ))
-                db.commit()
+            db.add(models.ProviderSetting(
+                name="VipSmmPro",
+                slug="vipsmmpro",
+                api_url=_api_url,
+                api_key=_api_key,
+                is_active=True,
+                is_default=True,
+            ))
+            db.commit()
+        else:
+            if not default_provider.api_key or default_provider.api_key == "configured_via_admin_or_env":
+                default_provider.api_key = _api_key
+            default_provider.is_active = True
+            db.commit()
 
         # Seed or update smmxpert provider
         _xpert_url = _os.getenv("SMMXPERT_API_URL", "https://smmxpert.com/api/v2")
-        _xpert_key = _os.getenv("SMMXPERT_API_KEY", "")
+        _xpert_key = _os.getenv("SMMXPERT_API_KEY", "f9eda9b4501d6eea1414e1931e7d63b2")
         smmxpert_provider = db.query(models.ProviderSetting).filter(
             models.ProviderSetting.slug == "smmxpert"
         ).first()
@@ -168,13 +173,13 @@ def run_migrations():
                 name="SMMXpert",
                 slug="smmxpert",
                 api_url=_xpert_url,
-                api_key=_xpert_key or "configured_via_admin_or_env",
-                is_active=bool(_xpert_key),
+                api_key=_xpert_key,
+                is_active=True,
                 is_default=False,
             ))
             db.commit()
-        elif _xpert_key:
-            smmxpert_provider.api_url = _xpert_url
-            smmxpert_provider.api_key = _xpert_key
+        else:
+            if not smmxpert_provider.api_key or smmxpert_provider.api_key == "configured_via_admin_or_env":
+                smmxpert_provider.api_key = _xpert_key
             smmxpert_provider.is_active = True
             db.commit()
