@@ -455,6 +455,36 @@
             }, 4000);
         }
     </script>
+    <!-- Cold-Start / Wake-Up Banner (shown briefly on first visit after sleep) -->
+    <div id="wake-banner" style="display:none"
+         class="fixed top-0 left-0 right-0 z-[999] bg-[#161b22] border-b border-[#d29922]/40 px-4 py-2
+                flex items-center justify-center gap-3 text-xs text-[#d29922] font-medium shadow-lg">
+        <span class="w-2 h-2 rounded-full bg-[#d29922] animate-pulse shrink-0"></span>
+        <span id="wake-text">Server is waking up from sleep — this may take up to 60 seconds…</span>
+        <button onclick="document.getElementById('wake-banner').style.display='none'"
+                class="ml-3 text-[#8b949e] hover:text-[#f0f6fc] text-sm leading-none shrink-0">✕</button>
+    </div>
+    <script>
+    (function () {
+        var WAKE_KEY = 'smm_last_ok';
+        var now = Date.now();
+        var last = parseInt(sessionStorage.getItem(WAKE_KEY) || '0', 10);
+        // If the last successful visit was > 20 minutes ago (or never), show the banner
+        if (now - last > 20 * 60 * 1000) {
+            document.getElementById('wake-banner').style.display = 'flex';
+        }
+        // Ping /health and update the timestamp; hide banner once confirmed alive
+        fetch('/health').then(function (r) {
+            if (r.ok) {
+                sessionStorage.setItem(WAKE_KEY, String(Date.now()));
+                setTimeout(function () {
+                    var b = document.getElementById('wake-banner');
+                    if (b) b.style.display = 'none';
+                }, 2000);
+            }
+        }).catch(function () {});
+    })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

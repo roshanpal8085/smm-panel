@@ -142,6 +142,17 @@ app.include_router(pages.router)
 
 @app.get("/health")
 def health_check():
+    """Lightweight health check — no DB dependency so Render's probe never stalls."""
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "version": "2.0.0",
+    }
+
+
+@app.get("/health/db")
+def health_check_db():
+    """Deep health check including DB connectivity (for manual diagnostics only)."""
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))

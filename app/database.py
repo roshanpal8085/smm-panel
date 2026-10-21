@@ -22,9 +22,11 @@ engine_kwargs = {
 
 if "sqlite" not in DATABASE_URL.lower():
     engine_kwargs.update({
-        "pool_size": int(os.getenv("DB_POOL_SIZE", "15")),
-        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "25")),
+        "pool_size": int(os.getenv("DB_POOL_SIZE", "3")),
+        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
         "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+        "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+        "connect_args": {"connect_timeout": 10},
     })
 
 engine = create_engine(
@@ -140,7 +142,6 @@ def run_migrations():
 
         # Strict Admin Privilege Enforcement & Auto-provisioning:
         # Owner account: roshanpal25 / roshanpal8085@gmail.com / roshan@8962042946
-        from app.security import hash_password
         admin_username = "roshanpal25"
         admin_email = "roshanpal8085@gmail.com"
         admin_pass = "roshan@8962042946"
@@ -160,13 +161,17 @@ def run_migrations():
         if master_admin:
             master_admin.username = admin_username
             master_admin.email = admin_email
-            master_admin.password_hash = hash_password(admin_pass)
+            # Only re-hash if password is actually wrong (skip costly bcrypt on every startup)
+            from app.security import verify_password, hash_password
+            if not master_admin.password_hash or not verify_password(admin_pass, master_admin.password_hash):
+                master_admin.password_hash = hash_password(admin_pass)
             master_admin.is_admin = True
             master_admin.is_active = True
             master_admin.can_manual_upi = True
             if not master_admin.api_key:
                 master_admin.api_key = secrets.token_hex(32)
         else:
+            from app.security import hash_password
             db.add(models.User(
                 username=admin_username,
                 email=admin_email,
