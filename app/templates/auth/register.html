@@ -57,11 +57,16 @@
                     })
                 });
 
-                let data;
+                let data = null;
+                let textBody = '';
                 try {
                     data = await res.json();
                 } catch(parseErr) {
-                    this.error = `Server temporarily unavailable (${res.status} ${res.statusText || 'Error'}). If you just deployed, the database may still be initializing. Please wait 30 seconds and try again.`;
+                    try { textBody = await res.text(); } catch(e) {}
+                }
+
+                if (!data) {
+                    this.error = `Server error (${res.status}): ${textBody || res.statusText || 'Database connecting or initializing. Please check Render logs.'}`;
                     return;
                 }
 

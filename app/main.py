@@ -2,9 +2,13 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.database import engine, run_migrations
 from app.providers.vipsmmpro import VipSmmProClient
@@ -74,6 +78,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception(f"Unhandled server error on {request.method} {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": str(exc),
+            "detail": f"{type(exc).__name__}: {str(exc)}"
+        }
+    )
 
 # Static Files Mount (if directory exists or created)
 static_dir = os.path.join(os.path.dirname(__file__), "static")

@@ -41,11 +41,16 @@
                     })
                 });
 
-                let data;
+                let data = null;
+                let textBody = '';
                 try {
                     data = await res.json();
                 } catch(parseErr) {
-                    this.error = `Server temporarily unavailable (${res.status} ${res.statusText || 'Error'}). Please try again.`;
+                    try { textBody = await res.text(); } catch(e) {}
+                }
+
+                if (!data) {
+                    this.error = `Server error (${res.status}): ${textBody || res.statusText || 'Please try again.'}`;
                     return;
                 }
 
