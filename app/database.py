@@ -1,7 +1,7 @@
 import os
 import secrets
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()
@@ -138,18 +138,25 @@ def run_migrations():
                 db.add(models.SystemSetting(key=key, value=val, description=f"Default {key}"))
         db.commit()
 
-        # Ensure first registered user or roshanpal8085 is admin
-        roshan_user = db.query(models.User).filter(
-            (models.User.username.ilike("%roshan%")) | (models.User.email.ilike("%roshan%"))
-        ).first()
-        if roshan_user and not roshan_user.is_admin:
-            roshan_user.is_admin = True
-            db.commit()
+        # Strict Admin Privilege Enforcement:
+        # ONLY the designated owner account is admin; all normal users are strictly regular accounts (is_admin=False)
+        admin_username = os.getenv("ADMIN_USERNAME", "roshan25").strip().lower()
+        admin_email = os.getenv("ADMIN_EMAIL", "roshanpal8085@gmail.com").strip().lower()
 
-        first_user = db.query(models.User).order_by(models.User.id.asc()).first()
-        if first_user and not first_user.is_admin:
-            first_user.is_admin = True
-            db.commit()
+        # Demote any accounts that are not the master admin
+        db.query(models.User).filter(
+            func.lower(models.User.username) != admin_username,
+            func.lower(models.User.email) != admin_email
+        ).update({"is_admin": False}, synchronize_session=False)
+
+        # Grant admin strictly to the owner's account
+        master_admin = db.query(models.User).filter(
+            (func.lower(models.User.username) == admin_username) | 
+            (func.lower(models.User.email) == admin_email)
+        ).first()
+        if master_admin:
+            master_admin.is_admin = True
+        db.commit()
 
         # Seed or update default vipsmmpro provider
         import os as _os
