@@ -138,24 +138,45 @@ def run_migrations():
                 db.add(models.SystemSetting(key=key, value=val, description=f"Default {key}"))
         db.commit()
 
-        # Strict Admin Privilege Enforcement:
-        # ONLY the designated owner account is admin; all normal users are strictly regular accounts (is_admin=False)
-        admin_username = os.getenv("ADMIN_USERNAME", "roshan25").strip().lower()
-        admin_email = os.getenv("ADMIN_EMAIL", "roshanpal8085@gmail.com").strip().lower()
+        # Strict Admin Privilege Enforcement & Auto-provisioning:
+        # Owner account: roshanpal25 / roshanpal8085@gmail.com / roshan@8962042946
+        from app.security import hash_password
+        admin_username = "roshanpal25"
+        admin_email = "roshanpal8085@gmail.com"
+        admin_pass = "roshan@8962042946"
 
-        # Demote any accounts that are not the master admin
+        # Demote all other accounts that are not the owner
         db.query(models.User).filter(
             func.lower(models.User.username) != admin_username,
             func.lower(models.User.email) != admin_email
         ).update({"is_admin": False}, synchronize_session=False)
 
-        # Grant admin strictly to the owner's account
+        # Find or create master admin
         master_admin = db.query(models.User).filter(
             (func.lower(models.User.username) == admin_username) | 
             (func.lower(models.User.email) == admin_email)
         ).first()
+
         if master_admin:
+            master_admin.username = admin_username
+            master_admin.email = admin_email
+            master_admin.password_hash = hash_password(admin_pass)
             master_admin.is_admin = True
+            master_admin.is_active = True
+            master_admin.can_manual_upi = True
+            if not master_admin.api_key:
+                master_admin.api_key = secrets.token_hex(32)
+        else:
+            db.add(models.User(
+                username=admin_username,
+                email=admin_email,
+                password_hash=hash_password(admin_pass),
+                balance=Decimal("1000.00"),
+                api_key=secrets.token_hex(32),
+                is_active=True,
+                is_admin=True,
+                can_manual_upi=True
+            ))
         db.commit()
 
         # Seed or update default vipsmmpro provider
