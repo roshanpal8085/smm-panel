@@ -41,17 +41,33 @@
                     })
                 });
 
-                const data = await res.json();
+                let data;
+                try {
+                    data = await res.json();
+                } catch(parseErr) {
+                    this.error = `Server temporarily unavailable (${res.status} ${res.statusText || 'Error'}). Please try again.`;
+                    return;
+                }
+
                 if (res.ok && data.success) {
                     showToast('Login successful! Redirecting to workspace...', 'success');
                     setTimeout(() => {
                         window.location.href = '/dashboard';
                     }, 500);
                 } else {
-                    this.error = data.detail || data.error || 'Incorrect username or password.';
+                    let errMsg = 'Incorrect username or password.';
+                    if (typeof data.detail === 'string') {
+                        errMsg = data.detail;
+                    } else if (Array.isArray(data.detail) && data.detail.length > 0) {
+                        errMsg = data.detail.map(d => d.msg || d.loc?.join('.')).join(', ');
+                    } else if (data.error) {
+                        errMsg = data.error;
+                    }
+                    this.error = errMsg;
                 }
             } catch (err) {
-                this.error = 'Network error. Please try again.';
+                console.error('Login fetch error:', err);
+                this.error = 'Network connection failed. Please check your internet connection or verify the server status.';
             } finally {
                 this.loading = false;
             }

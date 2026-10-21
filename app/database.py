@@ -11,6 +11,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not configured")
 
+# Normalize Render/Heroku postgres:// URLs for SQLAlchemy 2.0
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # Configure connection pooling for production reliability
 engine_kwargs = {
     "pool_pre_ping": True,
@@ -59,54 +63,54 @@ def run_migrations():
 
     # 2. Add columns if not existing (for existing PostgreSQL setups)
     if "sqlite" not in DATABASE_URL.lower():
-        with engine.begin() as conn:
-            migration_statements = [
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(64) UNIQUE;",
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_manual_upi BOOLEAN DEFAULT TRUE;",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS utr_number VARCHAR(100);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS notes TEXT;",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS admin_id INTEGER REFERENCES users(id);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS admin_notes TEXT;",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS screenshot_path VARCHAR(255);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_currency VARCHAR(20);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_amount NUMERIC(18, 8);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_address VARCHAR(255);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS network VARCHAR(50);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS checkout_url VARCHAR(500);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS qr_url VARCHAR(500);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50);",
-                "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_payload TEXT;",
-                # Service catalog & availability
-                "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_name VARCHAR(100) DEFAULT 'vipsmmpro';",
-                "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_available BOOLEAN DEFAULT TRUE;",
-                "ALTER TABLE services ADD COLUMN IF NOT EXISTS customer_visible BOOLEAN DEFAULT TRUE;",
-                "ALTER TABLE services ADD COLUMN IF NOT EXISTS manual_markup_percent NUMERIC(8, 2);",
-                "ALTER TABLE services ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMP;",
-                # Order financial snapshot
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_rate NUMERIC(12, 4);",
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_rate NUMERIC(12, 4);",
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS gross_profit NUMERIC(12, 4);",
-                # Multi-provider support
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS slug VARCHAR(100) UNIQUE DEFAULT 'vipsmmpro';",
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS timeout_seconds INTEGER DEFAULT 30;",
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS max_retries INTEGER DEFAULT 3;",
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS rate_limit_rpm INTEGER DEFAULT 60;",
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT FALSE;",
-                "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();",
-                # Order provider snapshot
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_slug VARCHAR(100);",
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_service_id VARCHAR(50);",
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_sync_error TEXT;",
-                "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sync_attempts INTEGER DEFAULT 0;",
-            ]
+        migration_statements = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(64) UNIQUE;",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS can_manual_upi BOOLEAN DEFAULT TRUE;",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS utr_number VARCHAR(100);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS notes TEXT;",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS admin_id INTEGER REFERENCES users(id);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS admin_notes TEXT;",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS screenshot_path VARCHAR(255);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_currency VARCHAR(20);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_amount NUMERIC(18, 8);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS crypto_address VARCHAR(255);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS network VARCHAR(50);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS checkout_url VARCHAR(500);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS qr_url VARCHAR(500);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_payload TEXT;",
+            # Service catalog & availability
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_name VARCHAR(100) DEFAULT 'vipsmmpro';",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_available BOOLEAN DEFAULT TRUE;",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS customer_visible BOOLEAN DEFAULT TRUE;",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS manual_markup_percent NUMERIC(8, 2);",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMP;",
+            # Order financial snapshot
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_rate NUMERIC(12, 4);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_rate NUMERIC(12, 4);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS gross_profit NUMERIC(12, 4);",
+            # Multi-provider support
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS slug VARCHAR(100) UNIQUE DEFAULT 'vipsmmpro';",
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS timeout_seconds INTEGER DEFAULT 30;",
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS max_retries INTEGER DEFAULT 3;",
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS rate_limit_rpm INTEGER DEFAULT 60;",
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE provider_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();",
+            # Order provider snapshot
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_slug VARCHAR(100);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_service_id VARCHAR(50);",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_sync_error TEXT;",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sync_attempts INTEGER DEFAULT 0;",
+        ]
+        with engine.connect() as conn:
             for statement in migration_statements:
                 try:
                     conn.execute(text(statement))
+                    conn.commit()
                 except Exception:
-                    pass
-            conn.commit()
+                    conn.rollback()
 
     # 3. Populate missing API keys for existing users
     with SessionLocal() as db:

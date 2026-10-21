@@ -57,17 +57,33 @@
                     })
                 });
 
-                const data = await res.json();
+                let data;
+                try {
+                    data = await res.json();
+                } catch(parseErr) {
+                    this.error = `Server temporarily unavailable (${res.status} ${res.statusText || 'Error'}). If you just deployed, the database may still be initializing. Please wait 30 seconds and try again.`;
+                    return;
+                }
+
                 if (res.ok && data.success) {
                     showToast('Account created successfully! Welcome to SMM Prime.', 'success');
                     setTimeout(() => {
                         window.location.href = '/dashboard';
                     }, 500);
                 } else {
-                    this.error = data.detail || data.error || 'Failed to create account';
+                    let errMsg = 'Failed to create account';
+                    if (typeof data.detail === 'string') {
+                        errMsg = data.detail;
+                    } else if (Array.isArray(data.detail) && data.detail.length > 0) {
+                        errMsg = data.detail.map(d => d.msg || d.loc?.join('.')).join(', ');
+                    } else if (data.error) {
+                        errMsg = data.error;
+                    }
+                    this.error = errMsg;
                 }
             } catch (err) {
-                this.error = 'Network error. Please try again.';
+                console.error('Registration fetch error:', err);
+                this.error = 'Network connection failed. Please check your internet connection or verify the server status.';
             } finally {
                 this.loading = false;
             }
