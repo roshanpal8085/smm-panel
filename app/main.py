@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
     # 3. Auto-sync services if database has 0 services
     import asyncio
-    async def _auto_seed_services():
+    def _do_sync_catalogue():
         try:
             from app.database import SessionLocal
             from app.models import Service
@@ -63,10 +63,14 @@ async def lifespan(app: FastAPI):
                 count = db.scalar(select(func.count(Service.id))) or 0
                 if count == 0:
                     print("Services table empty on startup; importing catalogue from active providers...")
-                    import_services_from_all_providers(db)
-                    print("Initial catalogue import completed successfully!")
+                    results = import_services_from_all_providers(db)
+                    print(f"Initial catalogue import completed successfully: {results}")
         except Exception as e:
             print(f"Catalogue auto-seed notice: {e}")
+
+    async def _auto_seed_services():
+        await asyncio.sleep(2)
+        await asyncio.to_thread(_do_sync_catalogue)
 
     asyncio.create_task(_auto_seed_services())
 

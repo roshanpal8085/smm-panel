@@ -138,6 +138,19 @@ def run_migrations():
                 db.add(models.SystemSetting(key=key, value=val, description=f"Default {key}"))
         db.commit()
 
+        # Ensure first registered user or roshanpal8085 is admin
+        roshan_user = db.query(models.User).filter(
+            (models.User.username.ilike("%roshan%")) | (models.User.email.ilike("%roshan%"))
+        ).first()
+        if roshan_user and not roshan_user.is_admin:
+            roshan_user.is_admin = True
+            db.commit()
+
+        first_user = db.query(models.User).order_by(models.User.id.asc()).first()
+        if first_user and not first_user.is_admin:
+            first_user.is_admin = True
+            db.commit()
+
         # Seed or update default vipsmmpro provider
         import os as _os
         _api_url = _os.getenv("PROVIDER_API_URL", "https://vipsmmpro.com/api/v2")
