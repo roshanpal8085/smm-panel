@@ -1,3 +1,4 @@
+import bcrypt
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -33,23 +34,27 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-def _safe_bcrypt_password(password: str) -> str:
-    """
-    Bcrypt has a strict architectural limit of 72 bytes.
-    Safely truncate long passwords to 72 bytes so hashing never crashes.
-    """
-    if not password:
-        return ""
-    raw_bytes = password.encode("utf-8")[:72]
-    return raw_bytes.decode("utf-8", errors="ignore")
-
-
 def hash_password(password: str) -> str:
-    return pwd_context.hash(_safe_bcrypt_password(password))
+    """
+    Hashes password using bcrypt with strict 72-byte max safety limit.
+    Bcrypt has a hard limit of 72 bytes; slicing raw bytes prevents ValueError.
+    """
+    pw_bytes = (password or "").encode("utf-8")[:72]
+    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(_safe_bcrypt_password(plain_password), hashed_password)
+    """
+    Verifies password using bcrypt with strict 72-byte max safety limit.
+    """
+    try:
+        pw_bytes = (plain_password or "").encode("utf-8")[:72]
+        return bcrypt.checkpw(pw_bytes, (hashed_password or "").encode("utf-8"))
+    except Exception:
+        try:
+            return pwd_context.verify((plain_password or "")[:72], hashed_password)
+        except Exception:
+            return False
 
 
 def create_access_token(user_id: int) -> str:

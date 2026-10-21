@@ -103,7 +103,7 @@
                         <a href="/support" class="text-[11px] text-[#58a6ff] hover:underline">Forgot password?</a>
                     </div>
                     <div class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" x-model="password" required class="gh-input pr-8" placeholder="••••••••">
+                        <input :type="showPassword ? 'text' : 'password'" x-model="password" required maxlength="72" class="gh-input pr-8" placeholder="••••••••">
                         <button type="button" @click="showPassword = !showPassword" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] hover:text-[#f0f6fc] text-xs">
                             <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
                         </button>
