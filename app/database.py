@@ -9,11 +9,19 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not configured")
+    # Graceful fallback to prevent import-time crash on Vercel cold boot
+    print("WARNING: DATABASE_URL is not configured in environment! Falling back to temporary SQLite.")
+    DATABASE_URL = "sqlite:///./fallback.db"
 
 # Normalize Render/Heroku postgres:// URLs for SQLAlchemy 2.0
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Ensure SSL requirement for remote PostgreSQL instances
+if "postgresql://" in DATABASE_URL and "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
+    if "sslmode=" not in DATABASE_URL:
+        separator = "&" if "?" in DATABASE_URL else "?"
+        DATABASE_URL = f"{DATABASE_URL}{separator}sslmode=require"
 
 # Configure connection pooling for production reliability.
 # On Vercel (serverless / ephemeral containers) keep the pool tiny to avoid

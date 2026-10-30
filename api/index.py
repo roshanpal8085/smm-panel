@@ -4,12 +4,34 @@
 #
 # Vercel automatically discovers ASGI callables in files named:
 #   api/index.py  →  exports a top-level `app` or `handler`
-#
-# We simply import the FastAPI application instance from the existing
-# app package.  No code is duplicated or rewritten here.
 # ---------------------------------------------------------------------------
-from app.main import app  # noqa: F401 — Vercel picks up `app` from this module
+import sys
+import os
+import traceback
 
-# `app` is re-exported automatically by the import above.
-# Vercel's Python serverless runtime wraps the ASGI callable and handles
-# routing, so no additional wiring is needed.
+# Ensure project root is in Python sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from app.main import app
+except Exception as exc:
+    # If anything unexpected fails during cold start, return diagnostic error
+    error_trace = traceback.format_exc()
+    print(f"CRITICAL ERROR loading app in Vercel: {error_trace}", file=sys.stderr)
+    
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
+
+    app = FastAPI(title="SMM PRIME - Startup Diagnostic")
+
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+    async def catch_all(path: str):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "Failed to initialize application on Vercel",
+                "details": str(exc),
+                "traceback": error_trace.splitlines(),
+                "hint": "Check Vercel Environment Variables: DATABASE_URL, JWT_SECRET_KEY, APP_ENV, etc."
+            }
+        )

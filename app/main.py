@@ -38,48 +38,54 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Run migrations & table creations safely
-    try:
-        run_migrations()
-        print("Database schema verified & migrations applied")
-    except Exception as e:
-        print(f"Database migration notice: {e}")
+    _is_vercel = os.getenv("VERCEL") is not None
+
+    # 1. Run migrations & table creations safely (skip on Vercel serverless to prevent cold-boot timeouts)
+    if not _is_vercel:
+        try:
+            run_migrations()
+            print("Database schema verified & migrations applied")
+        except Exception as e:
+            print(f"Database migration notice: {e}")
+    else:
+        print("Vercel serverless runtime: skipping DDL migrations on cold boot")
 
     # 2. Start background scheduler
     # Disabled on Vercel (serverless functions are ephemeral; threads are killed
-    # after each request so APScheduler never fires).  Set ENABLE_SCHEDULER=true
+    # after each request so APScheduler never fires). Set ENABLE_SCHEDULER=true
     # on Render where the process is long-lived.
-    _scheduler_enabled = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("1", "true", "yes")
+    _scheduler_enabled = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("1", "true", "yes") and not _is_vercel
     if _scheduler_enabled:
         try:
             start_scheduler()
         except Exception as e:
             print(f"Scheduler start notice: {e}")
     else:
-        print("Background scheduler disabled (ENABLE_SCHEDULER != true)")
+        print("Background scheduler disabled (ENABLE_SCHEDULER != true or Vercel runtime)")
 
-    # 3. Auto-sync services if database has 0 services
-    import asyncio
-    def _do_sync_catalogue():
-        try:
-            from app.database import SessionLocal
-            from app.models import Service
-            from app.services.provider_sync import import_services_from_all_providers
-            from sqlalchemy import func, select
-            with SessionLocal() as db:
-                count = db.scalar(select(func.count(Service.id))) or 0
-                if count == 0:
-                    print("Services table empty on startup; importing catalogue from active providers...")
-                    results = import_services_from_all_providers(db)
-                    print(f"Initial catalogue import completed successfully: {results}")
-        except Exception as e:
-            print(f"Catalogue auto-seed notice: {e}")
+    # 3. Auto-sync services if database has 0 services (long-lived server only)
+    if not _is_vercel:
+        import asyncio
+        def _do_sync_catalogue():
+            try:
+                from app.database import SessionLocal
+                from app.models import Service
+                from app.services.provider_sync import import_services_from_all_providers
+                from sqlalchemy import func, select
+                with SessionLocal() as db:
+                    count = db.scalar(select(func.count(Service.id))) or 0
+                    if count == 0:
+                        print("Services table empty on startup; importing catalogue from active providers...")
+                        results = import_services_from_all_providers(db)
+                        print(f"Initial catalogue import completed successfully: {results}")
+            except Exception as e:
+                print(f"Catalogue auto-seed notice: {e}")
 
-    async def _auto_seed_services():
-        await asyncio.sleep(2)
-        await asyncio.to_thread(_do_sync_catalogue)
+        async def _auto_seed_services():
+            await asyncio.sleep(2)
+            await asyncio.to_thread(_do_sync_catalogue)
 
-    asyncio.create_task(_auto_seed_services())
+        asyncio.create_task(_auto_seed_services())
 
     yield
 

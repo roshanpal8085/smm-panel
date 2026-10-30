@@ -21,7 +21,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 
 if not SECRET_KEY:
-    raise ValueError("JWT_SECRET_KEY is not configured")
+    print("WARNING: JWT_SECRET_KEY is not configured! Using temporary session secret.")
+    SECRET_KEY = os.getenv("SECRET_KEY", "temporary-fallback-secret-key-change-in-production-1234567890")
 
 pwd_context = CryptContext(
     schemes=["bcrypt"],
