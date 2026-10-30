@@ -1,3 +1,4 @@
+﻿import os
 import secrets
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -13,6 +14,9 @@ from app.security import (
     hash_password,
     verify_password,
 )
+
+# Use secure cookies when running in production (HTTPS on Render/Vercel)
+_SECURE_COOKIES = os.getenv("APP_ENV", "development").lower() == "production"
 
 router = APIRouter(
     prefix="/auth",
@@ -81,7 +85,7 @@ def register(
         httponly=True,
         max_age=86400 * 7,
         samesite="lax",
-        secure=False  # Set True in production with HTTPS
+        secure=_SECURE_COOKIES  # True on Render/Vercel (HTTPS), False in local dev
     )
 
     return {
@@ -126,7 +130,7 @@ def login(
         httponly=True,
         max_age=86400 * 7,
         samesite="lax",
-        secure=False
+        secure=_SECURE_COOKIES  # True on Render/Vercel (HTTPS), False in local dev
     )
 
     return {
@@ -174,7 +178,7 @@ def login_json(
         httponly=True,
         max_age=86400 * 7,
         samesite="lax",
-        secure=False
+        secure=_SECURE_COOKIES  # True on Render/Vercel (HTTPS), False in local dev
     )
 
     return {

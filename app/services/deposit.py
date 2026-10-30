@@ -99,7 +99,11 @@ def save_screenshot_file(file: UploadFile) -> str:
     if len(content) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(status_code=400, detail="Screenshot file size exceeds 5MB limit")
 
-    upload_dir = os.path.join("uploads", "screenshots")
+    # On Vercel the project root filesystem is read-only.
+    # Use /tmp (writable, ephemeral) so the upload at least succeeds for the
+    # current request.  On Render the persistent "uploads/" path is used.
+    _base = "/tmp" if os.getenv("VERCEL") else "uploads"
+    upload_dir = os.path.join(_base, "screenshots")
     os.makedirs(upload_dir, exist_ok=True)
 
     filename = f"proof_{uuid.uuid4().hex}{ext}"

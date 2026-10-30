@@ -46,10 +46,17 @@ async def lifespan(app: FastAPI):
         print(f"Database migration notice: {e}")
 
     # 2. Start background scheduler
-    try:
-        start_scheduler()
-    except Exception as e:
-        print(f"Scheduler start notice: {e}")
+    # Disabled on Vercel (serverless functions are ephemeral; threads are killed
+    # after each request so APScheduler never fires).  Set ENABLE_SCHEDULER=true
+    # on Render where the process is long-lived.
+    _scheduler_enabled = os.getenv("ENABLE_SCHEDULER", "true").lower() in ("1", "true", "yes")
+    if _scheduler_enabled:
+        try:
+            start_scheduler()
+        except Exception as e:
+            print(f"Scheduler start notice: {e}")
+    else:
+        print("Background scheduler disabled (ENABLE_SCHEDULER != true)")
 
     # 3. Auto-sync services if database has 0 services
     import asyncio
@@ -76,11 +83,12 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # 3. Shutdown
-    try:
-        stop_scheduler()
-    except Exception as e:
-        print(f"Scheduler stop notice: {e}")
+    # Shutdown
+    if os.getenv("ENABLE_SCHEDULER", "true").lower() in ("1", "true", "yes"):
+        try:
+            stop_scheduler()
+        except Exception as e:
+            print(f"Scheduler stop notice: {e}")
 
 
 app = FastAPI(

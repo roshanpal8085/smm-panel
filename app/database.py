@@ -15,19 +15,34 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Configure connection pooling for production reliability
+# Configure connection pooling for production reliability.
+# On Vercel (serverless / ephemeral containers) keep the pool tiny to avoid
+# exhausting the PostgreSQL connection limit when many function instances run
+# concurrently.  On Render (long-lived process) a small pool is also fine.
+_is_serverless = os.getenv("VERCEL") is not None
 engine_kwargs = {
     "pool_pre_ping": True,
 }
 
 if "sqlite" not in DATABASE_URL.lower():
-    engine_kwargs.update({
-        "pool_size": int(os.getenv("DB_POOL_SIZE", "3")),
-        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
-        "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
-        "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
-        "connect_args": {"connect_timeout": 10},
-    })
+    if _is_serverless:
+        # Serverless: minimal pool — each invocation creates at most 1 connection
+        engine_kwargs.update({
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "1")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "2")),
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "300")),
+            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "20")),
+            "connect_args": {"connect_timeout": 10},
+        })
+    else:
+        # Long-lived process (Render / local): small but persistent pool
+        engine_kwargs.update({
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "3")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "5")),
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+            "connect_args": {"connect_timeout": 10},
+        })
 
 engine = create_engine(
     DATABASE_URL,
