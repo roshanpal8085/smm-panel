@@ -36,6 +36,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class VercelPathMiddleware(BaseHTTPMiddleware):
+    """
+    Normalizes requests routed through Vercel rewrites:
+    {"source": "/(.*)", "destination": "/api/index.py?path=$1"}
+    Extracts the ?path= parameter and restores request.scope['path'].
+    On Render and local development (?path= is absent), it does nothing.
+    """
+    async def dispatch(self, request: Request, call_next):
+        path_param = request.query_params.get("path")
+        if path_param is not None:
+            new_path = "/" + path_param.lstrip("/")
+            request.scope["path"] = new_path
+            request.scope["raw_path"] = new_path.encode("ascii")
+        return await call_next(request)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _is_vercel = os.getenv("VERCEL") is not None
@@ -104,6 +120,9 @@ app = FastAPI(
     lifespan=lifespan,
     redirect_slashes=False
 )
+
+# Vercel Path Normalization (restores path from ?path=$1 rewrite)
+app.add_middleware(VercelPathMiddleware)
 
 # Security Headers
 app.add_middleware(SecurityHeadersMiddleware)
