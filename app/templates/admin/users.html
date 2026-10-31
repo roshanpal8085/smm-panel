@@ -113,8 +113,8 @@
             <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Organization Members & Wallets</h1>
         </div>
         <div class="relative w-full sm:w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
-            <input type="text" x-model="search" @input.debounce.300ms="fetchUsers()" placeholder="Search members by username or email..." class="gh-input text-xs py-1.5 pl-8 pr-3">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs pointer-events-none"></i>
+            <input type="text" x-model="search" @input.debounce.300ms="fetchUsers()" placeholder="Search members by username or email..." class="gh-input has-search-icon text-xs py-1.5 pl-9 pr-3">
         </div>
     </div>
 

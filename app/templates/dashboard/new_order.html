@@ -296,12 +296,12 @@
 
                 <!-- Quick Search Input -->
                 <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs pointer-events-none"></i>
                     <input type="text" 
                            x-model="searchQuery" 
                            @input="onSearchChange()" 
                            placeholder="Filter services by name or ID..." 
-                           class="gh-input pl-8 pr-7 py-1.5 text-xs">
+                           class="gh-input has-search-icon pl-9 pr-7 py-1.5 text-xs">
                     <button type="button" 
                             x-show="searchQuery" 
                             @click="searchQuery = ''; onSearchChange()" 
