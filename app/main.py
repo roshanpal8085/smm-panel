@@ -101,7 +101,8 @@ app = FastAPI(
     title="SMM PRIME Platform",
     description="Wholesale Social Media Marketing Reseller Engine & API",
     version="2.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redirect_slashes=False
 )
 
 # Security Headers

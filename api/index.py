@@ -13,9 +13,28 @@ import traceback
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from app.main import app
+    from app.main import app as fastapi_app
+
+    async def app(scope, receive, send):
+        """
+        ASGI middleware wrapper for Vercel.
+        Normalizes the request path because Vercel rewrites often pass
+        '/api/index.py' in scope['path'] or provide the original route in 'x-matched-path'.
+        """
+        if scope["type"] in ("http", "websocket"):
+            headers = dict(scope.get("headers", []))
+            matched_path = headers.get(b"x-matched-path", b"").decode("utf-8")
+            
+            if matched_path:
+                scope["path"] = matched_path
+            elif scope.get("path", "").startswith("/api/index.py"):
+                scope["path"] = scope["path"][len("/api/index.py"):] or "/"
+            elif scope.get("path", "").startswith("/api/index"):
+                scope["path"] = scope["path"][len("/api/index"):] or "/"
+
+        await fastapi_app(scope, receive, send)
+
 except Exception as exc:
-    # If anything unexpected fails during cold start, return diagnostic error
     error_trace = traceback.format_exc()
     print(f"CRITICAL ERROR loading app in Vercel: {error_trace}", file=sys.stderr)
     
