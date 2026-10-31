@@ -128,15 +128,21 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Static Files Mount (if directory exists or created)
+# Static Files Mount (safely handle read-only environments like Vercel)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
-if not os.path.exists(static_dir):
+try:
+    os.makedirs(static_dir, exist_ok=True)
+except OSError:
+    static_dir = "/tmp/static"
     os.makedirs(static_dir, exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Uploads mount (for payment proof screenshots served to admin)
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-if not os.path.exists(uploads_dir):
+try:
+    os.makedirs(uploads_dir, exist_ok=True)
+except OSError:
+    uploads_dir = "/tmp/uploads"
     os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
