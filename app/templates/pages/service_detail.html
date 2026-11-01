@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Best {{ platform }} SMM Panel India | Cheap & Instant {{ platform }} Growth — Yoomo{% endblock %}
+{% block canonical_path %}/services/{{ platform_slug }}{% endblock %}
+{% block og_title %}{{ platform }} SMM Panel India — Instant {{ platform }} Services | Yoomo{% endblock %}
+{% block og_desc %}{{ seo_description }}{% endblock %}
+{% block og_url %}/services/{{ platform_slug }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-xs text-[#8b949e]">
+        <a href="/" class="hover:text-[#58a6ff]">Home</a>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <a href="/services-list" class="hover:text-[#58a6ff]">Services</a>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span class="text-[#f0f6fc] font-semibold">{{ platform }}</span>
+    </div>
+
+    <!-- Hero Banner -->
+    <div class="gh-box p-6 sm:p-10 relative overflow-hidden bg-gradient-to-br from-[#161b22] to-[#0d1117] border border-[#30363d]">
+        <div class="max-w-3xl space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#21262d] border border-[#30363d] text-xs font-semibold text-[#a78bfa]">
+                <i class="{{ icon }} text-sm"></i>
+                <span>Direct Provider API Delivery</span>
+            </div>
+            <h1 class="text-3xl sm:text-5xl font-black text-[#f0f6fc] tracking-tight">
+                #1 Cheap <span class="text-[#a78bfa]">{{ platform }}</span> SMM Panel India
+            </h1>
+            <p class="text-sm sm:text-base text-[#8b949e] leading-relaxed">
+                {{ hero_subtitle }}
+            </p>
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+                <a href="{% if user %}/new-order{% else %}/register{% endif %}" class="gh-btn-primary px-5 py-2.5 text-xs font-semibold">
+                    <i class="fa-solid fa-bolt mr-1.5"></i> Order {{ platform }} Services
+                </a>
+                <a href="#packages" class="gh-btn px-4 py-2.5 text-xs font-semibold">
+                    <i class="fa-solid fa-table-list mr-1.5 text-[#8b949e]"></i> View Pricing Table
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Package Rates Table -->
+    <section id="packages" class="space-y-4" x-data="{
+        search: '',
+        services: [],
+        loading: true,
+        async init() {
+            try {
+                const res = await fetch('/services?category={{ platform }}');
+                const data = await res.json();
+                if (data.success) {
+                    this.services = data.services.filter(s => 
+                        s.category.toLowerCase().includes('{{ platform_slug }}') || 
+                        s.name.toLowerCase().includes('{{ platform_slug }}')
+                    );
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.loading = false;
+            }
+        },
+        get filtered() {
+            if (!this.search) return this.services;
+            return this.services.filter(s => 
+                s.name.toLowerCase().includes(this.search.toLowerCase()) || 
+                s.id.toString().includes(this.search)
+            );
+        }
+    }">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-bold text-[#f0f6fc]">Live {{ platform }} Packages & Rates</h2>
+                <p class="text-xs text-[#8b949e]">Updated in real-time. Sub-second API dispatch guaranteed.</p>
+            </div>
+            <div class="w-full sm:w-64 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#8b949e] text-xs"></i>
+                <input type="text" x-model="search" placeholder="Search {{ platform }} package..." class="gh-input text-xs py-1.5 pl-8">
+            </div>
+        </div>
+
+        <div class="gh-box overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-[#161b22] border-b border-[#30363d] text-[11px] font-semibold text-[#8b949e]">
+                            <th class="py-3 px-4 w-16 font-mono">ID</th>
+                            <th class="py-3 px-4">Service Name</th>
+                            <th class="py-3 px-4 w-32 font-mono">Rate / 1K</th>
+                            <th class="py-3 px-4 w-32 font-mono">Min / Max</th>
+                            <th class="py-3 px-4 w-24 text-center">Refill</th>
+                            <th class="py-3 px-4 w-24 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#21262d] text-[#c9d1d9]">
+                        <template x-if="loading">
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-[#8b949e]">
+                                    <i class="fa-solid fa-spinner fa-spin text-base text-[#58a6ff] mb-2"></i>
+                                    <p>Loading active {{ platform }} services...</p>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <template x-for="s in filtered" :key="s.id">
+                            <tr class="gh-box-row hover:bg-[#161b22]/70">
+                                <td class="py-2.5 px-4 font-mono font-bold text-[#58a6ff]" x-text="'#' + s.id"></td>
+                                <td class="py-2.5 px-4 font-medium text-[#f0f6fc]" x-text="s.name"></td>
+                                <td class="py-2.5 px-4 font-mono font-bold text-[#3fb950]">₹<span x-text="s.rate"></span></td>
+                                <td class="py-2.5 px-4 font-mono text-[11px] text-[#8b949e]">
+                                    <span x-text="s.min"></span> / <span x-text="s.max"></span>
+                                </td>
+                                <td class="py-2.5 px-4 text-center">
+                                    <span x-show="s.refill" class="gh-badge-open text-[10px]">Yes</span>
+                                    <span x-show="!s.refill" class="text-[#6e7681]">-</span>
+                                </td>
+                                <td class="py-2.5 px-4 text-right">
+                                    <a :href="'{% if user %}/new-order?service=' + s.id + '{% else %}/login{% endif %}'" class="gh-btn-primary py-0.5 px-2.5 text-xs">
+                                        Order
+                                    </a>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Yoomo for Platform -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="gh-box p-5 space-y-2">
+            <div class="w-8 h-8 rounded-lg bg-[#21262d] flex items-center justify-center text-[#3fb950]">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <h3 class="text-sm font-bold text-[#f0f6fc]">Instant Auto-Start</h3>
+            <p class="text-xs text-[#8b949e] leading-relaxed">
+                Orders dispatch directly to our high-speed provider network within 0 to 60 seconds of submission.
+            </p>
+        </div>
+        <div class="gh-box p-5 space-y-2">
+            <div class="w-8 h-8 rounded-lg bg-[#21262d] flex items-center justify-center text-[#58a6ff]">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h3 class="text-sm font-bold text-[#f0f6fc]">Wholesale Pricing in INR</h3>
+            <p class="text-xs text-[#8b949e] leading-relaxed">
+                Pay directly in Indian Rupees (INR) with instant UPI QR (PhonePe, GPay, Paytm) with 0% gateway fees.
+            </p>
+        </div>
+        <div class="gh-box p-5 space-y-2">
+            <div class="w-8 h-8 rounded-lg bg-[#21262d] flex items-center justify-center text-[#a78bfa]">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="text-sm font-bold text-[#f0f6fc]">Drop-Protection Guarantee</h3>
+            <p class="text-xs text-[#8b949e] leading-relaxed">
+                Services with refill tags automatically qualify for 30–90 day drop-protection with 1-click refill support.
+            </p>
+        </div>
+    </section>
+
+    <!-- Platform FAQ (Structured FAQ Schema) -->
+    <section class="space-y-4" x-data="{ openFaq: 1 }">
+        <div class="border-b border-[#30363d] pb-3">
+            <h2 class="text-xl font-bold text-[#f0f6fc]">{{ platform }} Services FAQ</h2>
+            <p class="text-xs text-[#8b949e]">Common questions regarding delivery, retention, and account safety.</p>
+        </div>
+
+        <div class="space-y-2 text-xs">
+            {% for item in faqs %}
+            <div class="gh-box overflow-hidden">
+                <button @click="openFaq = openFaq === {{ loop.index }} ? null : {{ loop.index }}" class="w-full p-4 text-left flex items-center justify-between font-semibold text-[#f0f6fc]">
+                    <span>{{ item.q }}</span>
+                    <i :class="openFaq === {{ loop.index }} ? 'fa-solid fa-chevron-up text-[#a78bfa]' : 'fa-solid fa-chevron-down text-[#8b949e]'"></i>
+                </button>
+                <div x-show="openFaq === {{ loop.index }}" x-cloak class="px-4 pb-4 text-[#8b949e] leading-relaxed border-t border-[#21262d] pt-3">
+                    {{ item.a }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<!-- JSON-LD FAQPage Schema for Rich Search Snippets -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for item in faqs %}
+    {
+      "@type": "Question",
+      "name": {{ item.q | tojson }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ item.a | tojson }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}

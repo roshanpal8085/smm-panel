@@ -153,7 +153,7 @@ def get_categories(
     }
 
 
-@router.get("/{service_id}")
+@router.get("/{service_id:int}")
 def get_service_details(
     service_id: int,
     db: Session = Depends(get_db)

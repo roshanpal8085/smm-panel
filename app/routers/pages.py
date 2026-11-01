@@ -30,6 +30,8 @@ def get_system_context(db: Session) -> dict:
         "upi_id": settings_dict.get("upi_id", "roshanpal25@slc"),
         "min_deposit": settings_dict.get("min_deposit", "50"),
         "max_upi_deposit": settings_dict.get("max_upi_deposit", "1000"),
+        "ga_id": os.getenv("GOOGLE_ANALYTICS_ID"),
+        "google_site_verification": os.getenv("GOOGLE_SITE_VERIFICATION"),
     }
 
 
@@ -65,6 +67,93 @@ def page_services_list(
         **get_system_context(db)
     }
     return render_template(request, "pages/services_list.html", ctx)
+
+
+PLATFORM_SEO_CONFIG = {
+    "instagram": {
+        "platform": "Instagram",
+        "platform_slug": "instagram",
+        "icon": "fa-brands fa-instagram text-[#e1306c]",
+        "hero_subtitle": "Boost your Instagram reach with India's best SMM panel. Buy high-quality followers, real likes, reel views, and comments at wholesale prices.",
+        "seo_description": "Best Indian SMM panel for Instagram followers, likes, views and reels. Instant delivery, non-drop refill guarantee, and wholesale rates starting at ₹0.05.",
+        "faqs": [
+            {
+                "q": "Will Instagram followers from Yoomo drop?",
+                "a": "We provide High Quality (HQ) and Non-Drop packages with 30 to 90-day automatic refill guarantees. If any drop occurs, click refill from your dashboard for an instant top-up."
+            },
+            {
+                "q": "Do I need to share my Instagram password?",
+                "a": "Never. We only need your public username or post link. We never ask for your password or private account access."
+            },
+            {
+                "q": "How fast are Instagram reel views and likes delivered?",
+                "a": "Most Instagram orders dispatch within 0 to 60 seconds and complete naturally according to order volume."
+            }
+        ]
+    },
+    "youtube": {
+        "platform": "YouTube",
+        "platform_slug": "youtube",
+        "icon": "fa-brands fa-youtube text-[#ff0000]",
+        "hero_subtitle": "Accelerate YouTube monetization with organic views, non-drop subscribers, high-retention watch hours, and video likes.",
+        "seo_description": "Buy YouTube watch time, non-drop subscribers, and real video views in India. 100% monetization-safe services with direct provider API routing.",
+        "faqs": [
+            {
+                "q": "Are YouTube watch hours from Yoomo safe for monetization?",
+                "a": "Yes. Our watch hours packages are sourced from high-retention sessions that comply with YouTube channel monetization thresholds."
+            },
+            {
+                "q": "What is the speed for YouTube subscribers delivery?",
+                "a": "Subscribers are delivered at a safe, natural pace of 50 to 200 per day to ensure stability and permanent retention."
+            },
+            {
+                "q": "What link format is required for YouTube orders?",
+                "a": "For subscribers or watch hours, provide your public channel link or video URL. Ensure your video has no geographic or age restrictions."
+            }
+        ]
+    },
+    "telegram": {
+        "platform": "Telegram",
+        "platform_slug": "telegram",
+        "icon": "fa-brands fa-telegram text-[#229ed9]",
+        "hero_subtitle": "Grow your Telegram community instantly with real channel subscribers, group members, and automated post views.",
+        "seo_description": "Cheapest SMM panel in India for Telegram members, channel subscribers, and auto-views. Instant start, zero drop, and 24/7 dedicated support.",
+        "faqs": [
+            {
+                "q": "Are Telegram members delivered to public and private channels?",
+                "a": "Yes. Our automated system supports both public channel links (@channelname) and private join invite links (t.me/+joinlink)."
+            },
+            {
+                "q": "How fast do Telegram members join?",
+                "a": "Delivery typically starts within 15 to 30 seconds of order submission."
+            },
+            {
+                "q": "Can I order automated post views for future Telegram posts?",
+                "a": "Yes, our catalog features Auto-Views packages that automatically send views to your next 5 to 50 posts as soon as you publish."
+            }
+        ]
+    }
+}
+
+
+@router.get("/services/{platform_slug}")
+def page_platform_landing(
+    platform_slug: str,
+    request: Request,
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    slug = platform_slug.lower().strip()
+    if slug not in PLATFORM_SEO_CONFIG:
+        raise HTTPException(status_code=404, detail="Page not found")
+
+    config = PLATFORM_SEO_CONFIG[slug]
+    ctx = {
+        "user": user,
+        **config,
+        **get_system_context(db)
+    }
+    return render_template(request, "pages/service_detail.html", ctx)
 
 
 @router.get("/api-docs")
@@ -462,6 +551,9 @@ def robots_txt():
     content = """User-agent: *
 Allow: /
 Allow: /services-list
+Allow: /services/instagram
+Allow: /services/youtube
+Allow: /services/telegram
 Allow: /api-docs
 Allow: /privacy-policy
 Allow: /terms-of-service
@@ -500,6 +592,24 @@ def sitemap_xml():
   </url>
   <url>
     <loc>https://yoomo.in/services-list</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/services/instagram</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/services/youtube</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/services/telegram</loc>
     <lastmod>{today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>

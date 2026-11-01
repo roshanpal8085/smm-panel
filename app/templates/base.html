@@ -12,6 +12,9 @@
     <!-- Canonical & Robots -->
     <link rel="canonical" href="https://yoomo.in{% block canonical_path %}/{% endblock %}">
     {% block noindex %}{% endblock %}
+    {% if google_site_verification %}
+    <meta name="google-site-verification" content="{{ google_site_verification }}">
+    {% endif %}
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Yoomo">
@@ -482,6 +485,16 @@
             }, 4000);
         }
     </script>
+    {% if ga_id %}
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ ga_id }}');
+    </script>
+    {% endif %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

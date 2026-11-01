@@ -170,7 +170,7 @@ except OSError:
     os.makedirs(uploads_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
-# Include API Routers
+# Include API Routers (services.router has /services/categories and /services/{service_id:int})
 app.include_router(auth.router)
 app.include_router(services.router)
 app.include_router(orders.router)
@@ -180,7 +180,7 @@ app.include_router(api_v2.router)
 app.include_router(admin.router)
 app.include_router(providers.router)
 
-# Include Frontend Web UI Router
+# Include Frontend Web UI Router (HTML pages)
 app.include_router(pages.router)
 
 
