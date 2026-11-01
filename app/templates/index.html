@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}SMM PRIME | #1 Reseller SMM Panel & Instant Social Growth{% endblock %}
+{% block title %}Yoomo — India's Best SMM Panel | Cheap Instagram, YouTube & Telegram Services{% endblock %}
+{% block canonical_path %}/{% endblock %}
+{% block og_title %}Yoomo — India's Best SMM Panel | Cheap Instagram, YouTube & Telegram Services{% endblock %}
+{% block og_desc %}Yoomo is India's leading SMM panel. Buy cheap Instagram followers, likes, YouTube views, and Telegram members with instant delivery at wholesale prices.{% endblock %}
+{% block og_url %}/{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -40,12 +44,12 @@
                     <span class="w-3 h-3 rounded-full bg-[#da3633]"></span>
                     <span class="w-3 h-3 rounded-full bg-[#d29922]"></span>
                     <span class="w-3 h-3 rounded-full bg-[#238636]"></span>
-                    <span class="font-mono text-[#8b949e] text-[11px] ml-2">bash — smm-cli v2</span>
+                    <span class="font-mono text-[#8b949e] text-[11px] ml-2">bash — yoomo-cli v2</span>
                 </div>
                 <span class="text-[10px] text-[#3fb950] font-mono">provider network: connected</span>
             </div>
             <div class="p-4 bg-[#010409] font-mono text-xs text-[#c9d1d9] space-y-1.5 leading-relaxed overflow-x-auto">
-                <p class="text-[#8b949e]">$ curl -X POST https://smm-prime.internal/api/v2 \</p>
+                <p class="text-[#8b949e]">$ curl -X POST https://yoomo.in/api/v2 \</p>
                 <p class="text-[#8b949e] pl-4">-d "action=add" -d "service=104" -d "quantity=1000"</p>
                 <p class="text-[#3fb950]">✓ Order #94821 routed to Primary Provider (latency: 114ms)</p>
                 <p class="text-[#8b949e]">✓ Status: In progress · Remainder: 1,000 · Charge: ₹45.00</p>
@@ -339,4 +343,36 @@
         </div>
     </div>
 </section>
+
+<!-- JSON-LD Structured Data for SEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Yoomo",
+  "url": "https://yoomo.in",
+  "description": "India's best SMM panel for cheap Instagram followers, YouTube views, Telegram members and social media marketing services.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://yoomo.in/services-list?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Yoomo",
+  "url": "https://yoomo.in",
+  "logo": "https://yoomo.in/static/og-image.png",
+  "sameAs": [],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "url": "https://yoomo.in/support",
+    "availableLanguage": ["English", "Hindi"]
+  }
+}
+</script>
 {% endblock %}

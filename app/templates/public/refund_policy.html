@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Refund Policy — Yoomo SMM Panel{% endblock %}
+{% block canonical_path %}/refund-policy{% endblock %}
+{% block og_title %}Refund Policy — Yoomo{% endblock %}
+{% block og_desc %}Read Yoomo's refund and cancellation policy for SMM panel orders and wallet deposits.{% endblock %}
+{% block og_url %}/refund-policy{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-xs text-[#8b949e] mb-8">
+        <a href="/" class="hover:text-[#58a6ff]">Home</a>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span class="text-[#f0f6fc]">Refund Policy</span>
+    </div>
+
+    <div class="gh-box p-6 sm:p-8 space-y-8">
+        <!-- Header -->
+        <div class="border-b border-[#30363d] pb-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">Y</div>
+                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[#f0f6fc] mb-2">Refund Policy</h1>
+            <p class="text-xs text-[#8b949e]">Last updated: November 2026 · Effective date: November 1, 2026</p>
+        </div>
+
+        <div class="prose prose-invert max-w-none text-sm text-[#c9d1d9] space-y-6">
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">1. General Policy</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Because SMM services are digital and are dispatched immediately to third-party providers upon order placement, <strong class="text-[#c9d1d9]">refunds for completed or in-progress orders are generally not available</strong>. However, we will work with you in good faith for valid issues as described below.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">2. When Refunds / Credits Are Eligible</h2>
+                <div class="space-y-4">
+                    <div class="p-3 rounded-lg bg-[rgba(46,160,67,0.1)] border border-[rgba(46,160,67,0.25)]">
+                        <h3 class="text-xs font-bold text-[#3fb950] uppercase tracking-wider mb-2">✓ Eligible for Wallet Credit</h3>
+                        <ul class="list-disc list-inside space-y-1.5 text-[#8b949e] leading-relaxed text-xs">
+                            <li>The order was <strong class="text-[#c9d1d9]">not started</strong> and was successfully cancelled before provider processing began.</li>
+                            <li>The service was delivered significantly short (more than 20% below the ordered quantity) and the provider does not complete it within 7 days.</li>
+                            <li>A technical error on our platform caused a duplicate charge (verified by our admin team).</li>
+                            <li>A payment was made via UPI/crypto but <strong class="text-[#c9d1d9]">wallet was not credited</strong> — upon verification of the payment receipt.</li>
+                        </ul>
+                    </div>
+                    <div class="p-3 rounded-lg bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.25)]">
+                        <h3 class="text-xs font-bold text-[#f85149] uppercase tracking-wider mb-2">✗ Not Eligible for Refund</h3>
+                        <ul class="list-disc list-inside space-y-1.5 text-[#8b949e] leading-relaxed text-xs">
+                            <li>Orders that have started or are "In Progress".</li>
+                            <li>Orders where the target URL was incorrect, private, or deleted by you after ordering.</li>
+                            <li>Complaints about engagement quality (e.g., "followers look fake") — delivery quantity is our guarantee, not quality perception.</li>
+                            <li>Social media platform actions against your account as a result of using our services.</li>
+                            <li>Buyer's remorse or change of mind after an order has been placed.</li>
+                            <li>Wallet balance disputes submitted after 30 days from the transaction.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">3. Refill Policy</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Services marked with <strong class="text-[#c9d1d9]">"Refill: Yes"</strong> are eligible for a free refill if the quantity drops within the specified refill guarantee period (typically 30–90 days). To request a refill:
+                </p>
+                <ol class="list-decimal list-inside space-y-2 text-[#8b949e] leading-relaxed mt-2">
+                    <li>Open a support ticket with your Order ID.</li>
+                    <li>Specify the current count vs. original order quantity.</li>
+                    <li>Our team will process the refill with our upstream provider, typically within 24–72 hours.</li>
+                </ol>
+                <p class="leading-relaxed text-[#8b949e] mt-3">
+                    Note: Refills are subject to upstream provider availability. We will issue a wallet credit if refill is not possible.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">4. Deposit Refunds</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Wallet deposits (UPI, crypto, Binance Pay) are non-refundable to the original payment method once credited to your account. Funds remain in your wallet and can be used for any future orders. In exceptional circumstances (e.g., account closure), refund requests may be reviewed on a case-by-case basis at our sole discretion.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">5. How to Request a Refund or Refill</h2>
+                <ol class="list-decimal list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li>Log into your Yoomo account.</li>
+                    <li>Go to <strong class="text-[#c9d1d9]">Support Tickets</strong> → <strong class="text-[#c9d1d9]">Open New Ticket</strong>.</li>
+                    <li>Select the subject "Refund Request" or "Refill Request".</li>
+                    <li>Include: Order ID, issue description, and any supporting screenshots.</li>
+                    <li>Our team will respond within 24 hours.</li>
+                </ol>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">6. Credit Method</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Approved refunds are issued as <strong class="text-[#c9d1d9]">wallet credits in INR</strong>. We do not issue refunds to bank accounts, UPI IDs, or crypto wallets. Credits are applied immediately upon approval.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">7. Disputes</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Initiating a payment chargeback without first contacting our support team will result in immediate account suspension. We encourage customers to resolve issues through our support system first.
+                </p>
+            </section>
+        </div>
+
+        <!-- Quick Legal Nav -->
+        <div class="pt-6 border-t border-[#30363d] flex flex-wrap gap-3">
+            <a href="/privacy-policy" class="gh-btn text-xs">Privacy Policy</a>
+            <a href="/terms-of-service" class="gh-btn text-xs">Terms of Service</a>
+            <a href="/support" class="gh-btn text-xs">Contact Support</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

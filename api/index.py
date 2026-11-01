@@ -21,7 +21,7 @@ except Exception as exc:
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
 
-    app = FastAPI(title="SMM PRIME - Startup Diagnostic")
+    app = FastAPI(title="Yoomo - Startup Diagnostic")
 
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
     async def catch_all(path: str):

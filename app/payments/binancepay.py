@@ -98,7 +98,7 @@ class BinancePayProvider(BasePaymentProvider):
                 "goodsType": "02",
                 "goodsCategory": "Z000",
                 "referenceGoodsId": "wallet_recharge",
-                "goodsName": "SMM Prime Wallet Top Up",
+                "goodsName": "Yoomo Wallet Top Up",
                 "goodsDetail": f"Account deposit of ₹{amount} (approx. {crypto_amount_usdt} USDT)"
             }
         }

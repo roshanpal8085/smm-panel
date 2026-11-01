@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service — Yoomo SMM Panel{% endblock %}
+{% block canonical_path %}/terms-of-service{% endblock %}
+{% block og_title %}Terms of Service — Yoomo{% endblock %}
+{% block og_desc %}Read Yoomo's Terms of Service — usage rules, payment terms, and service policies for our SMM panel.{% endblock %}
+{% block og_url %}/terms-of-service{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-xs text-[#8b949e] mb-8">
+        <a href="/" class="hover:text-[#58a6ff]">Home</a>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span class="text-[#f0f6fc]">Terms of Service</span>
+    </div>
+
+    <div class="gh-box p-6 sm:p-8 space-y-8">
+        <!-- Header -->
+        <div class="border-b border-[#30363d] pb-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">Y</div>
+                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[#f0f6fc] mb-2">Terms of Service</h1>
+            <p class="text-xs text-[#8b949e]">Last updated: November 2026 · Effective date: November 1, 2026</p>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="p-4 rounded-lg bg-[rgba(210,153,34,0.1)] border border-[rgba(210,153,34,0.3)]">
+            <p class="text-xs text-[#e3b341] leading-relaxed">
+                <strong>Important Notice:</strong> SMM services (followers, views, likes, etc.) are delivered by third-party providers. These services may violate the Terms of Service of the respective social media platforms (Instagram, YouTube, etc.). You use these services at your own risk. Yoomo does not guarantee outcomes, account safety, or compliance with any platform's policies. Please read the full terms below carefully before ordering.
+            </p>
+        </div>
+
+        <div class="prose prose-invert max-w-none text-sm text-[#c9d1d9] space-y-6">
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">1. Acceptance of Terms</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    By creating an account or using any service on <a href="https://yoomo.in" class="text-[#58a6ff] hover:underline">yoomo.in</a>, you ("user", "customer") agree to be bound by these Terms of Service. If you do not agree, do not use our platform.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">2. Description of Services</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Yoomo operates as an SMM reseller panel. We aggregate and resell social media marketing services (followers, likes, views, comments, etc.) sourced from third-party upstream providers. We act as an intermediary and are not the direct fulfillment partner.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">3. Account Responsibilities</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li>You must provide accurate registration information.</li>
+                    <li>You are responsible for maintaining the security of your account credentials.</li>
+                    <li>You must not share your account with others or allow unauthorized access.</li>
+                    <li>You must be at least 18 years of age to register.</li>
+                    <li>One account per person — duplicate accounts may be suspended.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">4. Payments & Wallet</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li>All deposits are added to your Yoomo wallet balance in INR (Indian Rupees).</li>
+                    <li>Wallet funds are used to pay for orders. Balances are non-transferable between accounts.</li>
+                    <li>Payment methods include UPI (via FamGateway), cryptocurrency (via Cryptomus), and Binance Pay.</li>
+                    <li>Deposits are typically credited within 0–15 minutes. If your payment is not credited within 1 hour, contact support with your payment reference.</li>
+                    <li>We do not offer cash withdrawals or fund transfers back to your bank account.</li>
+                    <li>Wallet funds do not expire.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">5. Orders & Delivery</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li>Orders are placed automatically and dispatched to upstream providers within seconds of submission.</li>
+                    <li>Once an order is placed and charge is deducted from your wallet, the order cannot be cancelled unless the provider supports cancellation and the order has not yet started.</li>
+                    <li>Delivery times vary by service type. Instant delivery is not guaranteed for all services — refer to the service description.</li>
+                    <li>You must provide a valid, public target URL. We are not responsible for failed orders caused by private accounts, incorrect links, or profile changes after ordering.</li>
+                    <li>Yoomo does not guarantee specific results, such as follower retention rates or engagement sustainability.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">6. Prohibited Uses</h2>
+                <p class="leading-relaxed text-[#8b949e]">You may not use Yoomo to:</p>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed mt-2">
+                    <li>Order services for targets you do not own or have authorization to promote.</li>
+                    <li>Engage in fraudulent activities, including chargeback abuse.</li>
+                    <li>Resell services in a manner that misrepresents Yoomo's offerings.</li>
+                    <li>Attempt to exploit, hack, or reverse-engineer the platform.</li>
+                    <li>Use the API to place orders at a rate that overloads our systems (rate limiting applies).</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">7. Platform Risk Disclosure</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Social media platforms (Instagram, YouTube, TikTok, etc.) may take action against accounts that use third-party growth services, including reducing engagement, removing content, or suspending accounts. Yoomo is not responsible for any actions taken by social media platforms against your accounts. You use our services entirely at your own risk.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">8. Refills</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Some services include a refill guarantee. If a service drops below the ordered quantity within the refill period (specified per service), you may request a refill through the support system. Refills are subject to provider availability and are not guaranteed for all services. See our <a href="/refund-policy" class="text-[#58a6ff] hover:underline">Refund Policy</a> for details.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">9. Termination</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Yoomo reserves the right to suspend or terminate any account at any time for violations of these terms, fraudulent activity, or at our sole discretion. Suspended accounts forfeit any remaining wallet balance. We will attempt to notify you by email prior to suspension unless the situation requires immediate action.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">10. Limitation of Liability</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Yoomo's liability is limited to the amount paid for the specific order that is the subject of a dispute. We are not liable for any indirect, incidental, or consequential damages, including loss of revenue, data, or social media account access.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">11. Governing Law</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    These Terms are governed by the laws of India. Any disputes shall be resolved through negotiation first; failing that, through arbitration under applicable Indian law.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">12. Changes to Terms</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We reserve the right to modify these Terms at any time. Continued use of the platform after changes constitutes acceptance of the updated Terms.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">13. Contact</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Questions about these Terms? <a href="/support" class="text-[#58a6ff] hover:underline">Open a support ticket</a>.
+                </p>
+            </section>
+        </div>
+
+        <!-- Quick Legal Nav -->
+        <div class="pt-6 border-t border-[#30363d] flex flex-wrap gap-3">
+            <a href="/privacy-policy" class="gh-btn text-xs">Privacy Policy</a>
+            <a href="/refund-policy" class="gh-btn text-xs">Refund Policy</a>
+            <a href="/support" class="gh-btn text-xs">Contact Support</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

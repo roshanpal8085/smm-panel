@@ -3,8 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SMM PRIME | #1 Cheapest & Fastest SMM Panel{% endblock %}</title>
-    <meta name="description" content="Boost your social media presence with the fastest, cheapest, and most reliable SMM Panel. Instant delivery for Instagram, YouTube, TikTok, Telegram and more.">
+    <title>{% block title %}Yoomo | India's #1 SMM Panel — Instant Social Media Growth{% endblock %}</title>
+    <meta name="description" content="Yoomo is India's best SMM panel offering cheap and instant delivery for Instagram, YouTube, Telegram, Twitter and more social media growth services.">
+    <!-- Canonical & Robots -->
+    <link rel="canonical" href="https://yoomo.in{% block canonical_path %}/{% endblock %}">
+    {% block noindex %}{% endblock %}
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Yoomo">
+    <meta property="og:title" content="{% block og_title %}Yoomo | India's #1 SMM Panel{% endblock %}">
+    <meta property="og:description" content="{% block og_desc %}India's best SMM panel for cheap Instagram followers, YouTube views, Telegram members and more. Instant delivery. Wholesale rates.{% endblock %}">
+    <meta property="og:url" content="https://yoomo.in{% block og_url %}/{% endblock %}">
+    <meta property="og:image" content="https://yoomo.in/static/og-image.png">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Yoomo | India's #1 SMM Panel{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_desc %}Cheap, fast SMM services for Instagram, YouTube, Telegram and more. Join Yoomo today.{% endblock %}">
+    <meta name="twitter:image" content="https://yoomo.in/static/og-image.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -24,8 +39,8 @@
                             400: '#8b949e'
                         },
                         brand: {
-                            primary: '#238636',
-                            primaryHover: '#2ea043',
+                            primary: '#7c3aed',
+                            primaryHover: '#6d28d9',
                             accent: '#58a6ff',
                             purple: '#8957e5',
                             success: '#3fb950',
@@ -72,14 +87,14 @@
 
         /* GitHub Buttons */
         .btn-git-primary {
-            background-color: #238636;
+            background-color: #7c3aed;
             color: #ffffff;
             border: 1px solid rgba(240, 246, 252, 0.1);
             box-shadow: 0 1px 0 rgba(27, 31, 36, 0.1);
             transition: all 0.15s ease;
         }
         .btn-git-primary:hover {
-            background-color: #2ea043;
+            background-color: #6d28d9;
             color: #ffffff;
         }
 
@@ -178,7 +193,7 @@
             border-radius: 4px;
             border: 1.5px solid #484f58;
             background-color: #0d1117;
-            accent-color: #238636;
+            accent-color: #7c3aed;
             cursor: pointer;
             display: inline-block;
             vertical-align: middle;
@@ -193,8 +208,8 @@
         }
         input[type=checkbox]:checked,
         input[type=radio]:checked {
-            border-color: #2ea043;
-            background-color: #238636;
+            border-color: #7c3aed;
+            background-color: #7c3aed;
         }
 
         /* Boxes */
@@ -222,10 +237,10 @@
             display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             padding: 5px 16px; font-size: 12px; font-weight: 500; line-height: 20px;
             border-radius: 6px; border: 1px solid rgba(240,246,252,0.1);
-            background-color: #238636; color: #fff; cursor: pointer;
+            background-color: #7c3aed; color: #fff; cursor: pointer;
             text-decoration: none; transition: 0.15s; white-space: nowrap;
         }
-        .gh-btn-primary:hover { background-color: #2ea043; }
+        .gh-btn-primary:hover { background-color: #6d28d9; }
         .gh-btn-primary:disabled, .gh-btn-primary[disabled] { opacity: 0.55; cursor: not-allowed; }
 
         .gh-btn-danger {
@@ -298,14 +313,14 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <!-- Brand Logo -->
             <a href="/" class="flex items-center gap-3 group">
-                <div class="w-9 h-9 rounded-xl bg-[#238636] flex items-center justify-center text-white shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
-                    <i class="fa-solid fa-bolt text-sm"></i>
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white shadow-md shadow-violet-900/30 group-hover:scale-105 transition-transform">
+                    <span class="text-sm font-black">Y</span>
                 </div>
                 <div>
                     <span class="text-xl font-black tracking-tight text-[#f0f6fc] flex items-center gap-1">
-                        SMM<span class="text-[#58a6ff]">PRIME</span>
+                        Yoomo
                     </span>
-                    <span class="block text-[9px] font-semibold tracking-widest uppercase text-[#8b949e] -mt-1">Pro Reseller Panel</span>
+                    <span class="block text-[9px] font-semibold tracking-widest uppercase text-[#8b949e] -mt-1">SMM Panel · India</span>
                 </div>
             </a>
 
@@ -378,13 +393,13 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                 <div class="space-y-3 md:col-span-1">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-[#238636] flex items-center justify-center text-white font-bold">
-                            <i class="fa-solid fa-bolt text-xs"></i>
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">
+                            Y
                         </div>
-                        <span class="text-lg font-extrabold text-[#f0f6fc]">SMM<span class="text-[#58a6ff]">PRIME</span></span>
+                        <span class="text-lg font-extrabold text-[#f0f6fc]">Yoomo</span>
                     </div>
                     <p class="text-xs text-[#8b949e] leading-relaxed">
-                        The world's premier social media growth provider. Ultra-fast delivery, automated API order routing, and 24/7 dedicated support.
+                        India's trusted SMM panel for instant social media growth. Automated order delivery, direct wholesale rates, and 24/7 dedicated support.
                     </p>
                     <div class="flex items-center gap-2.5 text-[#8b949e]">
                         <a href="#" class="w-7 h-7 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center hover:text-[#58a6ff] hover:bg-[#30363d] transition-colors"><i class="fa-brands fa-telegram text-xs"></i></a>
@@ -401,6 +416,9 @@
                         <li><a href="/services-list" class="hover:text-[#58a6ff] transition-colors">All Services & Pricing</a></li>
                         <li><a href="/login" class="hover:text-[#58a6ff] transition-colors">User Login</a></li>
                         <li><a href="/register" class="hover:text-[#58a6ff] transition-colors">Register Account</a></li>
+                        <li><a href="/privacy-policy" class="hover:text-[#58a6ff] transition-colors">Privacy Policy</a></li>
+                        <li><a href="/terms-of-service" class="hover:text-[#58a6ff] transition-colors">Terms of Service</a></li>
+                        <li><a href="/refund-policy" class="hover:text-[#58a6ff] transition-colors">Refund Policy</a></li>
                     </ul>
                 </div>
 
@@ -427,7 +445,7 @@
             </div>
 
             <div class="pt-6 border-t border-[#30363d] flex flex-col md:flex-row items-center justify-between text-[11px] text-[#8b949e] gap-3">
-                <p>&copy; 2026 SMM PRIME. All rights reserved. Built for high-volume performance & automated reliability.</p>
+                <p>&copy; 2026 Yoomo. All rights reserved. | <a href="/privacy-policy" class="hover:text-[#58a6ff]">Privacy</a> · <a href="/terms-of-service" class="hover:text-[#58a6ff]">Terms</a> · <a href="/refund-policy" class="hover:text-[#58a6ff]">Refunds</a></p>
                 <div class="flex items-center gap-4">
                     <span class="flex items-center gap-1.5 text-[#3fb950] font-medium font-mono">
                         <span class="w-2 h-2 rounded-full bg-[#238636] animate-pulse"></span>
@@ -475,7 +493,7 @@
     </div>
     <script>
     (function () {
-        var WAKE_KEY = 'smm_last_ok';
+        var WAKE_KEY = 'yoomo_last_ok';
         var now = Date.now();
         var last = parseInt(sessionStorage.getItem(WAKE_KEY) || '0', 10);
         // If the last successful visit was > 20 minutes ago (or never), show the banner

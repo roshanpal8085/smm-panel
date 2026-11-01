@@ -1,4 +1,4 @@
-# 🚀 SMM PRIME — Production-Ready Wholesale SMM Reseller Platform
+# 🚀 Yoomo — Production-Ready Wholesale SMM Reseller Platform (https://yoomo.in)
 
 A modern, high-converting, enterprise-grade Social Media Marketing (SMM) Reseller Panel built with **FastAPI**, **PostgreSQL**, **SQLAlchemy**, and a sleek **Tailwind CSS** dark cyberpunk UI. Integrated directly with **VipSmmPro API** for automated real-time order routing, live status tracking, and 3,000+ services out of the box.
 
@@ -117,7 +117,7 @@ pip install -r requirements.txt
 ### 2. Configure Environment
 Copy `.env.example` to `.env` and fill in your database and provider credentials:
 ```env
-APP_NAME=SMM PRIME
+APP_NAME=Yoomo
 APP_ENV=development
 
 DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/smm_panel

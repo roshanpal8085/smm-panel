@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy — Yoomo SMM Panel{% endblock %}
+{% block canonical_path %}/privacy-policy{% endblock %}
+{% block og_title %}Privacy Policy — Yoomo{% endblock %}
+{% block og_desc %}Read Yoomo's privacy policy to understand how we collect, use, and protect your personal data.{% endblock %}
+{% block og_url %}/privacy-policy{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-xs text-[#8b949e] mb-8">
+        <a href="/" class="hover:text-[#58a6ff]">Home</a>
+        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        <span class="text-[#f0f6fc]">Privacy Policy</span>
+    </div>
+
+    <div class="gh-box p-6 sm:p-8 space-y-8">
+        <!-- Header -->
+        <div class="border-b border-[#30363d] pb-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">Y</div>
+                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
+            </div>
+            <h1 class="text-2xl font-bold text-[#f0f6fc] mb-2">Privacy Policy</h1>
+            <p class="text-xs text-[#8b949e]">Last updated: November 2026 · Effective date: November 1, 2026</p>
+        </div>
+
+        <div class="prose prose-invert max-w-none text-sm text-[#c9d1d9] space-y-6">
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">1. Introduction</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Yoomo ("we", "our", or "us") operates the SMM panel at <a href="https://yoomo.in" class="text-[#58a6ff] hover:underline">yoomo.in</a>. This Privacy Policy explains what personal data we collect, how we use it, and what rights you have over it. By registering an account and using our services, you agree to this policy.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">2. Data We Collect</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li><strong class="text-[#c9d1d9]">Account data:</strong> Username, email address, and hashed password (we never store your plain-text password).</li>
+                    <li><strong class="text-[#c9d1d9]">Transaction data:</strong> Wallet top-up amounts, payment references, order history, and service links you submit.</li>
+                    <li><strong class="text-[#c9d1d9]">Device & usage data:</strong> IP address, browser type, and pages visited — collected automatically via server logs.</li>
+                    <li><strong class="text-[#c9d1d9]">Support data:</strong> Messages you send us through the support ticket system.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">3. How We Use Your Data</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li>To provide, maintain, and improve our SMM panel services.</li>
+                    <li>To process payments and manage your wallet balance.</li>
+                    <li>To send order status notifications and support replies.</li>
+                    <li>To detect and prevent fraud, abuse, and security threats.</li>
+                    <li>To comply with applicable legal obligations.</li>
+                </ul>
+                <p class="leading-relaxed text-[#8b949e] mt-3">We do not sell your personal data to third parties. We do not send unsolicited marketing emails.</p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">4. Data Sharing</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We share minimal data with:
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed mt-2">
+                    <li><strong class="text-[#c9d1d9]">SMM service providers</strong> (e.g., VipSmmPro, SMMXpert) — only the target URL, quantity, and service ID necessary to execute your order.</li>
+                    <li><strong class="text-[#c9d1d9]">Payment gateways</strong> (FamGateway, Cryptomus, Binance Pay) — only the transaction amount and reference required to verify payment.</li>
+                    <li><strong class="text-[#c9d1d9]">Hosting providers</strong> (Render, Vercel) — for infrastructure operation. These providers have their own privacy policies.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">5. Cookies & Storage</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We use a single HTTP-only cookie to maintain your login session (JWT token). We also use browser <code class="text-[#58a6ff] bg-[#161b22] px-1 rounded">sessionStorage</code> to cache the server health status locally (key: <code class="text-[#58a6ff] bg-[#161b22] px-1 rounded">yoomo_last_ok</code>). We do not use third-party advertising cookies.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">6. Data Retention</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We retain your account data for as long as your account is active. Order and payment records are kept for a minimum of 3 years for financial compliance. You may request account deletion by contacting support, but financial transaction records may be retained for legal compliance.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">7. Your Rights</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#8b949e] leading-relaxed">
+                    <li><strong class="text-[#c9d1d9]">Access:</strong> Request a copy of the data we hold about you.</li>
+                    <li><strong class="text-[#c9d1d9]">Correction:</strong> Update inaccurate account information via your Settings page.</li>
+                    <li><strong class="text-[#c9d1d9]">Deletion:</strong> Request deletion of your account by contacting support.</li>
+                    <li><strong class="text-[#c9d1d9]">Portability:</strong> Request your order and transaction history in CSV format.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">8. Security</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We use industry-standard security measures including bcrypt password hashing, HTTPS-only communication, HTTP-only JWT cookies, and server-side input validation. However, no system is 100% secure — please use a strong, unique password and do not share your credentials.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">9. Children</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    Our services are not intended for individuals under 18 years of age. We do not knowingly collect data from minors. If you believe a minor has registered, please contact us immediately.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">10. Changes to This Policy</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    We may update this Privacy Policy periodically. When we do, we will update the "Last updated" date above. Continued use of Yoomo after changes constitutes acceptance of the updated policy.
+                </p>
+            </section>
+
+            <section>
+                <h2 class="text-base font-bold text-[#f0f6fc] mb-3">11. Contact</h2>
+                <p class="leading-relaxed text-[#8b949e]">
+                    For privacy-related questions, email us via our <a href="/support" class="text-[#58a6ff] hover:underline">support ticket system</a> or visit <a href="https://yoomo.in" class="text-[#58a6ff] hover:underline">yoomo.in</a>.
+                </p>
+            </section>
+        </div>
+
+        <!-- Quick Legal Nav -->
+        <div class="pt-6 border-t border-[#30363d] flex flex-wrap gap-3">
+            <a href="/terms-of-service" class="gh-btn text-xs">Terms of Service</a>
+            <a href="/refund-policy" class="gh-btn text-xs">Refund Policy</a>
+            <a href="/support" class="gh-btn text-xs">Contact Support</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

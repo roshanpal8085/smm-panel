@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Sign in to SMM PRIME{% endblock %}
+{% block noindex %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block title %}Sign in — Yoomo SMM Panel{% endblock %}
 
 {% block content %}
 <div class="min-h-[calc(100vh-140px)] flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
-    <!-- SMM PRIME Logo Header -->
+    <!-- Yoomo Logo Header -->
     <div class="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
         <a href="/" class="inline-flex items-center justify-center mb-3">
-            <div class="w-10 h-10 rounded-lg bg-[#238636] flex items-center justify-center text-white shadow-md">
-                <i class="fa-solid fa-bolt text-lg"></i>
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white shadow-md font-black text-lg">
+                Y
             </div>
         </a>
         <h1 class="text-2xl font-bold tracking-tight text-[#f0f6fc]">
-            Sign in to SMM PRIME
+            Sign in to Yoomo
         </h1>
-        <p class="text-xs text-[#8b949e] mt-1">Access your reseller account & order dashboard</p>
+        <p class="text-xs text-[#8b949e] mt-1">Access your SMM account & order dashboard</p>
     </div>
 
     <div class="w-full max-w-[340px] space-y-4" x-data="{
@@ -119,7 +120,7 @@
 
         <!-- Create Account Box -->
         <div class="p-4 rounded-md bg-[#161b22] border border-[#30363d] text-center text-xs text-[#c9d1d9]">
-            New to SMM PRIME? 
+            New to Yoomo? 
             <a href="/register" class="text-[#58a6ff] hover:underline font-semibold ml-1">Create an account.</a>
         </div>
 

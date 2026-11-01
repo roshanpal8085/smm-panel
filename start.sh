@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Starting SMM PRIME Production Server..."
+echo "Starting Yoomo Production Server (https://yoomo.in)..."
 
 if [ -f ".venv/bin/python" ]; then
     PYTHON_BIN=".venv/bin/python"

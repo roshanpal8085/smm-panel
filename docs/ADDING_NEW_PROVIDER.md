@@ -1,6 +1,6 @@
-# 🔌 Adding a New SMM Provider to SMM PRIME
+# 🔌 Adding a New SMM Provider to Yoomo
 
-This guide explains how to add, configure, and manage new upstream SMM providers in the SMM PRIME multi-provider engine.
+This guide explains how to add, configure, and manage new upstream SMM providers in the Yoomo multi-provider engine.
 
 ---
 

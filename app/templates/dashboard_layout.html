@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block noindex %}<meta name="robots" content="noindex,nofollow">{% endblock %}
 
 {% block navbar %}{% endblock %}
 {% block footer %}{% endblock %}
@@ -10,10 +11,10 @@
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-[#30363d]">
             <a href="/" class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-[#238636] flex items-center justify-center text-white shadow-md shadow-emerald-900/30">
-                    <i class="fa-solid fa-bolt text-xs"></i>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">
+                    Y
                 </div>
-                <span class="text-lg font-black text-[#f0f6fc]">SMM<span class="text-[#58a6ff]">PRIME</span></span>
+                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
             </a>
         </div>
 
@@ -33,7 +34,7 @@
             </div>
         </div>
 
-        <!-- Navigation Links (Original SMM Prime Menu) -->
+        <!-- Navigation Links -->
         <nav class="flex-1 px-3 py-1 space-y-1 overflow-y-auto text-xs">
             <div class="text-[10px] font-bold uppercase tracking-wider text-[#8b949e] px-3 py-1">Main Menu</div>
             
@@ -109,7 +110,7 @@
         <div @click="sidebarOpen = false" class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
         <div class="relative flex flex-col w-64 max-w-[80%] bg-[#161b22] border-r border-[#30363d] h-full p-4 space-y-4">
             <div class="flex items-center justify-between border-b border-[#30363d] pb-3">
-                <span class="text-lg font-black text-[#f0f6fc]">SMM<span class="text-[#58a6ff]">PRIME</span></span>
+                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
                 <button @click="sidebarOpen = false" class="text-[#8b949e] hover:text-white">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>

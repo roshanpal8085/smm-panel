@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
@@ -33,7 +33,37 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';"
         return response
+
+
+class CanonicalDomainMiddleware(BaseHTTPMiddleware):
+    """
+    Production domain normalization:
+    - Permanent 301 redirect from www.yoomo.in to canonical https://yoomo.in
+    - Force HTTPS in production when forwarded over plain HTTP
+    """
+    async def dispatch(self, request: Request, call_next):
+        host = request.headers.get("host", "").lower().split(":")[0]
+        proto = request.headers.get("x-forwarded-proto", "").lower()
+
+        if host == "www.yoomo.in":
+            path = request.url.path
+            query = f"?{request.url.query}" if request.url.query else ""
+            return RedirectResponse(
+                url=f"https://yoomo.in{path}{query}",
+                status_code=301
+            )
+
+        if proto == "http" and host in ("yoomo.in", "www.yoomo.in"):
+            path = request.url.path
+            query = f"?{request.url.query}" if request.url.query else ""
+            return RedirectResponse(
+                url=f"https://yoomo.in{path}{query}",
+                status_code=301
+            )
+
+        return await call_next(request)
 
 
 class VercelPathMiddleware(BaseHTTPMiddleware):
@@ -113,13 +143,19 @@ async def lifespan(app: FastAPI):
             print(f"Scheduler stop notice: {e}")
 
 
+_cors_origins_raw = os.getenv("CORS_ORIGINS", "https://yoomo.in,https://www.yoomo.in")
+_allowed_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+
 app = FastAPI(
-    title="SMM PRIME Platform",
-    description="Wholesale Social Media Marketing Reseller Engine & API",
+    title="Yoomo — SMM Panel",
+    description="India's #1 SMM Panel — Instant Social Media Growth Services API",
     version="2.0.0",
     lifespan=lifespan,
     redirect_slashes=False
 )
+
+# Canonical Domain & HTTPS Redirect (www.yoomo.in -> yoomo.in)
+app.add_middleware(CanonicalDomainMiddleware)
 
 # Vercel Path Normalization (restores path from ?path=$1 rewrite)
 app.add_middleware(VercelPathMiddleware)
@@ -130,7 +166,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Cross-Origin Resource Sharing (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -139,12 +175,12 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(f"Unhandled server error on {request.method} {request.url.path}: {exc}")
+    _debug = os.getenv("DEBUG", "false").lower() in ("1", "true")
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
-            "error": str(exc),
-            "detail": f"{type(exc).__name__}: {str(exc)}"
+            "error": "Internal server error" if not _debug else str(exc),
         }
     )
 
@@ -182,9 +218,9 @@ app.include_router(pages.router)
 
 @app.get("/health")
 def health_check():
-    """Lightweight health check — no DB dependency so Render's probe never stalls."""
     return {
         "status": "healthy",
+        "service": "Yoomo API",
         "database": "connected",
         "version": "2.0.0",
     }

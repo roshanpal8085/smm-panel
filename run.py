@@ -14,7 +14,7 @@ load_dotenv()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the SMM PRIME Production Application Server")
+    parser = argparse.ArgumentParser(description="Run the Yoomo Production Application Server")
     parser.add_argument("--host", default=os.getenv("HOST", "0.0.0.0"), help="Host IP to bind (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=int(os.getenv("PORT", "8000")), help="Port to listen on (default: 8000)")
     parser.add_argument("--reload", action="store_true", default=(os.getenv("APP_ENV", "").lower() == "development"), help="Enable auto-reload for development")
@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
 
     print("==================================================")
-    print(" 🚀 STARTING SMM PRIME SERVER")
+    print(" 🚀 STARTING YOOMO SERVER (https://yoomo.in)")
     print(f" 🌐 Listening on: http://{args.host}:{args.port}")
     print(f" ⚙️ Mode: {'Development (auto-reload)' if args.reload else 'Production'}")
     print("==================================================")

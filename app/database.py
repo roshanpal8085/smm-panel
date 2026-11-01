@@ -145,22 +145,26 @@ def run_migrations():
         if users:
             db.commit()
 
-        # Seed default settings if empty
+        # Seed default settings or update branding
         default_settings = {
-            "site_name": "SMM PRIME",
+            "site_name": "Yoomo",
             "currency": "INR",
             "currency_symbol": "₹",
-            "support_email": "support@smmprime.com",
+            "support_email": "support@yoomo.in",
             "upi_id": os.getenv("UPI_ID", "roshanpal25@slc"),
             "min_deposit": "50",
             "max_upi_deposit": "1000",
-            "announcement": "Direct Wholesale Rates & 24/7 Fast Delivery",
+            "announcement": "India's Best SMM Panel — Instant Delivery & Wholesale Rates",
             "default_markup_percent": os.getenv("DEFAULT_MARKUP_PERCENT", "50"),
         }
         for key, val in default_settings.items():
             existing = db.query(models.SystemSetting).filter(models.SystemSetting.key == key).first()
             if not existing:
                 db.add(models.SystemSetting(key=key, value=val, description=f"Default {key}"))
+            elif key == "site_name" and existing.value in ("SMM PRIME", "SMM Prime", "smm-prime"):
+                existing.value = "Yoomo"
+            elif key == "support_email" and "smmprime.com" in (existing.value or ""):
+                existing.value = "support@yoomo.in"
         db.commit()
 
         # Strict Admin Privilege Enforcement & Auto-provisioning:

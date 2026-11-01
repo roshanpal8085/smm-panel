@@ -1,7 +1,7 @@
 from decimal import Decimal
 import os
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -23,10 +23,10 @@ def get_system_context(db: Session) -> dict:
     settings = db.scalars(select(SystemSetting)).all()
     settings_dict = {s.key: s.value for s in settings}
     return {
-        "site_name": settings_dict.get("site_name", "SMM PRIME"),
+        "site_name": settings_dict.get("site_name", "Yoomo"),
         "currency": settings_dict.get("currency", "INR"),
         "currency_symbol": settings_dict.get("currency_symbol", "₹"),
-        "announcement": settings_dict.get("announcement", "Direct Wholesale Rates & 24/7 Fast Delivery"),
+        "announcement": settings_dict.get("announcement", "India's Best SMM Panel — Instant Delivery & Wholesale Rates"),
         "upi_id": settings_dict.get("upi_id", "roshanpal25@slc"),
         "min_deposit": settings_dict.get("min_deposit", "50"),
         "max_upi_deposit": settings_dict.get("max_upi_deposit", "1000"),
@@ -424,3 +424,121 @@ def page_admin_tickets(
         **get_system_context(db)
     }
     return render_template(request, "admin/tickets.html", ctx)
+
+
+
+@router.get("/privacy-policy")
+def page_privacy(
+    request: Request,
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    ctx = {"user": user, **get_system_context(db)}
+    return render_template(request, "public/privacy_policy.html", ctx)
+
+
+@router.get("/terms-of-service")
+def page_terms(
+    request: Request,
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    ctx = {"user": user, **get_system_context(db)}
+    return render_template(request, "public/terms_of_service.html", ctx)
+
+
+@router.get("/refund-policy")
+def page_refund(
+    request: Request,
+    user: User | None = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    ctx = {"user": user, **get_system_context(db)}
+    return render_template(request, "public/refund_policy.html", ctx)
+
+
+@router.get("/robots.txt", response_class=Response)
+def robots_txt():
+    content = """User-agent: *
+Allow: /
+Allow: /services-list
+Allow: /api-docs
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /refund-policy
+
+Disallow: /dashboard
+Disallow: /new-order
+Disallow: /mass-order
+Disallow: /orders-history
+Disallow: /services-page
+Disallow: /add-funds
+Disallow: /support
+Disallow: /api-keys
+Disallow: /settings
+Disallow: /admin
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/v2
+
+Sitemap: https://yoomo.in/sitemap.xml
+"""
+    return Response(content=content, media_type="text/plain")
+
+
+@router.get("/sitemap.xml", response_class=Response)
+def sitemap_xml():
+    from datetime import date
+    today = date.today().isoformat()
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://yoomo.in/</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/services-list</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/api-docs</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/register</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/login</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/privacy-policy</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/terms-of-service</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://yoomo.in/refund-policy</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>"""
+    return Response(content=content, media_type="application/xml")

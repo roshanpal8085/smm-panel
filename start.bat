@@ -1,5 +1,5 @@
 @echo off
-echo Starting SMM PRIME Server...
+echo Starting Yoomo Server...
 if exist .venv\Scripts\python.exe (
     .venv\Scripts\python.exe run.py --reload
 ) else (
