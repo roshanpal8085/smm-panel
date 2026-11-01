@@ -296,6 +296,7 @@ def create_deposit(
             raw = result.raw_response or {}
             deposit.gateway_order_id = result.order_id     # NOWPayments payment_id
             deposit.gateway_payment_id = result.order_id
+            deposit.checkout_url = result.checkout_url
             deposit.crypto_address = result.crypto_address
             deposit.network = result.network
             deposit.qr_url = result.qr_url
@@ -306,6 +307,7 @@ def create_deposit(
             db.commit()
 
             response.update({
+                "checkout_url": result.checkout_url,
                 "currency": "USDT",
                 "pay_currency": pay_currency,
                 "pay_address": result.crypto_address,

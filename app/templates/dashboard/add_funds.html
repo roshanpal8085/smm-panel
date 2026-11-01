@@ -841,6 +841,13 @@
                     </div>
 
                     <div class="pt-3 border-t border-[#21262d] space-y-2">
+                        <template x-if="nowPaymentsData && nowPaymentsData.checkout_url">
+                            <a :href="nowPaymentsData.checkout_url" target="_blank" rel="noopener noreferrer"
+                               class="gh-btn w-full py-2 text-xs font-semibold flex items-center justify-center gap-2 text-[#58a6ff] hover:text-white border-[#58a6ff]/40 hover:border-[#58a6ff] hover:bg-[#1f6feb]/15 transition-all">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+                                <span>Open NOWPayments Payment Link</span>
+                            </a>
+                        </template>
                         <button type="button" @click="checkNowPaymentsStatusManually()" :disabled="loading"
                                 class="gh-btn w-full py-2 text-xs font-semibold flex items-center justify-center gap-2">
                             <i class="fa-solid fa-arrows-rotate text-[11px]" :class="loading ? 'fa-spin' : ''"></i>

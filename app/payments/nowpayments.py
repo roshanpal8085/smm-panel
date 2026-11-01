@@ -227,7 +227,28 @@ class NOWPaymentsProvider(BasePaymentProvider):
             payload["success_url"] = redirect_url
 
         try:
-            data = self._api_post("/payment", payload)
+            # 1. Create a hosted invoice to obtain the official payment link (invoice_url)
+            invoice_url = None
+            invoice_id = None
+            try:
+                inv_res = self._api_post("/invoice", payload)
+                invoice_url = inv_res.get("invoice_url")
+                invoice_id = inv_res.get("id")
+            except Exception as inv_err:
+                logger.warning(f"NOWPayments /invoice optional step: {inv_err}")
+
+            # 2. If invoice was created, create payment tied to it; otherwise fallback to direct /payment
+            if invoice_id:
+                try:
+                    data = self._api_post("/invoice-payment", {
+                        "iid": invoice_id,
+                        "pay_currency": pay_currency.lower(),
+                    })
+                except Exception:
+                    data = self._api_post("/payment", payload)
+            else:
+                data = self._api_post("/payment", payload)
+
             pay_address = data.get("pay_address", "")
             pay_amount = data.get("pay_amount") or amount
             payin_extra_id = data.get("payin_extra_id")  # MEMO/tag for some chains
@@ -248,11 +269,13 @@ class NOWPaymentsProvider(BasePaymentProvider):
                 order_id=payment_id,          # NOWPayments payment_id
                 amount=amount,
                 currency="USDT",
+                checkout_url=invoice_url,      # Official hosted payment link (https://nowpayments.io/payment/?iid=...)
                 crypto_address=pay_address,
                 network=network_code,
                 qr_url=qr_url,
                 raw_response={
                     **data,
+                    "invoice_url": invoice_url,
                     "pay_currency": pay_currency.lower(),
                     "pay_amount": str(pay_amount),
                     "payin_extra_id": payin_extra_id,
