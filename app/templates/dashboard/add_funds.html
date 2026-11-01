@@ -21,6 +21,120 @@
     checkoutUrl: '',
     depositRef: '',
 
+    nowPaymentsNetwork: 'usdtbsc',
+    nowPaymentsStep: 1,
+    nowPaymentsData: null,
+    nowPaymentsPolling: null,
+    nowPaymentsNetworks: [
+        { id: 'usdtbsc', label: 'USDT (BSC / BEP-20)', network: 'BSC', min: 1, icon: '🟡', desc: 'Lowest fees, fastest confirmation' },
+        { id: 'usdttrc20', label: 'USDT (TRC-20 / TRON)', network: 'TRON', min: 11, icon: '🔴', desc: 'Most popular TRON network' },
+        { id: 'usdtmatic', label: 'USDT (Polygon)', network: 'Polygon', min: 1, icon: '🟣', desc: 'Polygon low gas network' },
+        { id: 'usdterc20', label: 'USDT (ERC-20 / ETH)', network: 'Ethereum', min: 1, icon: '🔵', desc: 'Ethereum standard' },
+        { id: 'usdtsol', label: 'USDT (Solana SPL)', network: 'Solana', min: 2, icon: '🟢', desc: 'Solana SPL network' }
+    ],
+
+    get currentNetworkMin() {
+        const net = this.nowPaymentsNetworks.find(n => n.id === this.nowPaymentsNetwork);
+        return net ? net.min : 1;
+    },
+
+    get currentNetwork() {
+        return this.nowPaymentsNetworks.find(n => n.id === this.nowPaymentsNetwork) || this.nowPaymentsNetworks[0];
+    },
+
+    async initiateNowPayments() {
+        this.error = '';
+        const amt = parseFloat(this.amount);
+        if (isNaN(amt) || amt <= 0) {
+            this.error = 'Please enter a valid deposit amount in USDT.';
+            return;
+        }
+        if (amt < this.currentNetworkMin) {
+            this.error = `Minimum deposit for ${this.currentNetwork.label} is ${this.currentNetworkMin} USDT.`;
+            return;
+        }
+
+        this.loading = true;
+        try {
+            const res = await fetch('/wallet/deposit-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amt,
+                    payment_method: 'nowpayments',
+                    pay_currency: this.nowPaymentsNetwork
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                this.nowPaymentsData = data;
+                this.depositRef = data.reference;
+                this.nowPaymentsStep = 2;
+                this.startNowPaymentsPolling(data.deposit_id);
+                this.fetchDeposits();
+            } else {
+                this.error = data.detail || 'Failed to generate USDT deposit invoice.';
+            }
+        } catch(e) {
+            this.error = 'Network error while connecting to payment gateway.';
+        } finally {
+            this.loading = false;
+        }
+    },
+
+    startNowPaymentsPolling(depositId) {
+        if (this.nowPaymentsPolling) clearInterval(this.nowPaymentsPolling);
+        this.nowPaymentsPolling = setInterval(async () => {
+            try {
+                const res = await fetch(`/wallet/deposits/${depositId}/status`);
+                const data = await res.json();
+                if (data.status === 'Completed') {
+                    clearInterval(this.nowPaymentsPolling);
+                    this.nowPaymentsPolling = null;
+                    this.nowPaymentsStep = 3;
+                    showToast('USDT payment confirmed! Your wallet has been credited.', 'success');
+                    this.fetchDeposits();
+                } else if (data.status === 'Failed') {
+                    clearInterval(this.nowPaymentsPolling);
+                    this.nowPaymentsPolling = null;
+                    this.error = 'Deposit expired or failed. Please create a new invoice.';
+                    this.nowPaymentsStep = 1;
+                }
+                if (this.nowPaymentsData) {
+                    this.nowPaymentsData.nowpayments_status = data.provider_status || this.nowPaymentsData.nowpayments_status;
+                }
+            } catch(e) {
+                console.error('Polling error:', e);
+            }
+        }, 12000);
+    },
+
+    async checkNowPaymentsStatusManually() {
+        if (!this.nowPaymentsData || !this.nowPaymentsData.deposit_id) return;
+        this.loading = true;
+        try {
+            const res = await fetch(`/wallet/deposits/${this.nowPaymentsData.deposit_id}/status`);
+            const data = await res.json();
+            if (data.status === 'Completed') {
+                if (this.nowPaymentsPolling) clearInterval(this.nowPaymentsPolling);
+                this.nowPaymentsStep = 3;
+                showToast('USDT payment confirmed! Credited to your wallet.', 'success');
+                this.fetchDeposits();
+            } else if (data.status === 'Failed') {
+                if (this.nowPaymentsPolling) clearInterval(this.nowPaymentsPolling);
+                this.error = 'Deposit expired or failed.';
+                this.nowPaymentsStep = 1;
+            } else {
+                this.nowPaymentsData.nowpayments_status = data.provider_status || 'waiting';
+                showToast(`Payment status: ${data.provider_status || 'waiting for transfer'}`, 'info');
+            }
+        } catch(e) {
+            this.error = 'Could not verify status. Will auto-retry.';
+        } finally {
+            this.loading = false;
+        }
+    },
+
     get upiPaymentUrl() {
         const amt = parseFloat(this.amount || 0).toFixed(2);
         return `upi://pay?pa=${this.upiId}&pn=SMM%20Prime&am=${amt}&cu=INR`;
@@ -191,9 +305,15 @@
             </div>
             <h1 class="text-xl sm:text-2xl font-bold text-[#f0f6fc] tracking-tight mt-0.5">Wallet Top Up & Credits</h1>
         </div>
-        <div class="flex items-center gap-2 text-xs">
-            <span class="text-[#8b949e]">Available Balance:</span>
-            <span class="font-mono font-bold text-base text-[#3fb950]">₹{{ "%.2f"|format(user.balance|float) }}</span>
+        <div class="flex items-center gap-3 text-xs">
+            <div class="text-right">
+                <span class="text-[#8b949e] block text-[10px] font-semibold uppercase tracking-wider">INR Balance</span>
+                <span class="font-mono font-bold text-base text-[#3fb950]">₹{{ "%.2f"|format(user.balance|float) }}</span>
+            </div>
+            <div class="text-right pl-3 border-l border-[#30363d]">
+                <span class="text-[#8b949e] block text-[10px] font-semibold uppercase tracking-wider">USDT Balance</span>
+                <span class="font-mono font-bold text-base text-[#26a17b]">{{ "%.4f"|format(user.balance_usdt|float) if user.balance_usdt is defined and user.balance_usdt else "0.0000" }} <span class="text-[10px] text-[#8b949e]">USDT</span></span>
+            </div>
         </div>
     </div>
 
@@ -207,7 +327,7 @@
     </div>
 
     <!-- Payment Method Selector Tabs -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
         {% if user.can_manual_upi %}
         <button type="button" @click="selectedMethod = 'manual_upi'; manualStep = 1; error = ''"
             :class="selectedMethod === 'manual_upi' 
@@ -240,6 +360,23 @@
             <i class="fa-solid fa-bolt text-base" :class="selectedMethod === 'fampay' ? 'text-[#3fb950]' : 'text-[#8b949e]'"></i>
             <span class="text-xs font-semibold">Dynamic QR</span>
             <span class="text-[10px] text-[#8b949e] font-mono">Instant Auto</span>
+        </button>
+
+        <!-- NOWPayments USDT Direct Tab -->
+        <button type="button" @click="selectedMethod = 'nowpayments'; error = ''; nowPaymentsStep = 1; amount = 10"
+            :class="selectedMethod === 'nowpayments' 
+                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
+                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
+            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
+                  :class="selectedMethod === 'nowpayments' 
+                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
+                      : 'border-[#484f58] bg-[#0d1117]'">
+                <span x-show="selectedMethod === 'nowpayments'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <i class="fa-solid fa-circle-dollar-to-slot text-base" :class="selectedMethod === 'nowpayments' ? 'text-[#26a17b]' : 'text-[#8b949e]'"></i>
+            <span class="text-xs font-semibold">USDT Direct</span>
+            <span class="text-[10px] text-[#26a17b] font-mono font-medium">NOWPayments · TRC20/BSC</span>
         </button>
 
         <button type="button" @click="selectedMethod = 'binancepay'; error = ''"
@@ -477,9 +614,267 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- NOWPAYMENTS USDT FLOW                                    -->
+    <!-- ======================================================== -->
+    <div x-show="selectedMethod === 'nowpayments'" x-cloak class="space-y-4">
+
+        <!-- STEP 1: Select Network & Enter Amount -->
+        <div x-show="nowPaymentsStep === 1" class="gh-box p-6 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-[#21262d]">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-[#26a17b]/20 text-[#26a17b] flex items-center justify-center font-bold text-xs font-mono">1</span>
+                    <div>
+                        <h3 class="text-sm font-bold text-[#f0f6fc]">Direct USDT Crypto Deposit</h3>
+                        <p class="text-[11px] text-[#8b949e]">Select your preferred blockchain network and enter the USDT amount to deposit.</p>
+                    </div>
+                </div>
+                <span class="gh-badge-open text-[11px]">
+                    <i class="fa-solid fa-bolt text-[#26a17b] mr-1"></i> Auto-Credited in USDT
+                </span>
+            </div>
+
+            <!-- Network Selection Grid -->
+            <div>
+                <label class="block text-xs font-semibold text-[#f0f6fc] mb-2">Select Blockchain Network</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    <template x-for="net in nowPaymentsNetworks" :key="net.id">
+                        <button type="button" @click="nowPaymentsNetwork = net.id"
+                                :class="nowPaymentsNetwork === net.id 
+                                    ? 'bg-[#26a17b]/15 text-[#f0f6fc] border-[#26a17b] shadow-sm font-bold ring-1 ring-[#26a17b]' 
+                                    : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
+                                class="p-3 rounded-lg border text-left transition-all flex flex-col justify-between gap-1.5 relative">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base" x-text="net.icon"></span>
+                                    <span class="text-xs font-bold" x-text="net.label"></span>
+                                </div>
+                                <span class="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0"
+                                      :class="nowPaymentsNetwork === net.id ? 'border-[#26a17b] bg-[#26a17b]' : 'border-[#484f58] bg-[#0d1117]'">
+                                    <span x-show="nowPaymentsNetwork === net.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-[#8b949e] mt-1">
+                                <span x-text="net.desc"></span>
+                                <span class="font-mono font-bold text-[#26a17b]" x-text="'Min: ' + net.min + ' USDT'"></span>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Amount Input -->
+            <div class="max-w-md mx-auto space-y-4 pt-2">
+                <div>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5">Deposit Amount (USDT)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#26a17b] font-bold text-sm font-mono">$</span>
+                        <input type="number" x-model.number="amount" :min="currentNetworkMin" step="0.1" required
+                               class="gh-input pl-8 pr-16 py-2.5 font-mono text-base font-bold text-[#26a17b]" placeholder="10">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#8b949e]">USDT</span>
+                    </div>
+
+                    <!-- Presets -->
+                    <div class="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                        <span class="text-[11px] text-[#8b949e] mr-1">Quick Select:</span>
+                        <template x-for="preset in [5, 10, 25, 50, 100]">
+                            <button type="button" @click="amount = preset"
+                                    class="gh-btn py-1 px-2.5 text-xs font-mono"
+                                    :class="amount === preset ? 'border-[#26a17b] text-[#26a17b] bg-[#26a17b]/10 font-bold' : ''"
+                                    x-text="preset + ' USDT'"></button>
+                        </template>
+                    </div>
+
+                    <p class="text-[11px] text-[#8b949e] mt-2 font-mono">
+                        Minimum deposit for <span class="text-[#f0f6fc] font-semibold" x-text="currentNetwork.label"></span>: 
+                        <span class="text-[#26a17b] font-bold" x-text="currentNetworkMin + ' USDT'"></span>
+                    </p>
+                </div>
+
+                <!-- Currency Separation Notice -->
+                <div class="p-3 rounded-lg bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1.5">
+                    <div class="flex items-center gap-1.5 text-[#26a17b] font-semibold">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                        <span>Separate USDT Wallet Balance</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed">
+                        Funds deposited via USDT are credited directly to your <strong class="text-[#f0f6fc]">USDT balance</strong> (not converted to INR). Payments are verified on-chain via official NOWPayments webhooks.
+                    </p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="button" @click="initiateNowPayments()" :disabled="loading"
+                        class="gh-btn-primary w-full py-2.5 text-sm font-semibold flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                    <span x-show="!loading"><i class="fa-solid fa-qrcode mr-1"></i> Generate USDT Deposit Address</span>
+                    <span x-show="loading"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Creating Payment Invoice...</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Invoice Active & Awaiting Payment -->
+        <div x-show="nowPaymentsStep === 2 && nowPaymentsData" class="space-y-4">
+            <!-- Active Invoice Header Banner -->
+            <div class="gh-box-subtle p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#d29922] animate-pulse"></span>
+                    <div>
+                        <span class="text-xs text-[#8b949e]">USDT Invoice Active · Ref: <span class="font-mono text-[#58a6ff] font-bold" x-text="nowPaymentsData ? nowPaymentsData.reference : ''"></span></span>
+                        <div class="text-xs font-semibold text-[#f0f6fc] flex items-center gap-2 mt-0.5">
+                            <span>Status:</span>
+                            <span class="gh-badge-draft uppercase font-mono text-[10px]" x-text="nowPaymentsData ? (nowPaymentsData.nowpayments_status || 'Waiting for transfer') : ''"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="checkNowPaymentsStatusManually()" :disabled="loading" class="gh-btn text-xs py-1 px-3">
+                        <i class="fa-solid fa-arrows-rotate text-xs mr-1 text-[#58a6ff]" :class="loading ? 'fa-spin' : ''"></i> Check Status
+                    </button>
+                    <button type="button" @click="nowPaymentsStep = 1" class="gh-btn text-xs py-1 px-3 text-[#8b949e]">
+                        <i class="fa-solid fa-arrow-left text-xs mr-1"></i> Change
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Left: QR Code & Deposit Address -->
+                <div class="gh-box p-5 space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-[#21262d]">
+                        <span class="text-xs font-bold text-[#f0f6fc] flex items-center gap-1.5">
+                            <i class="fa-solid fa-qrcode text-[#26a17b]"></i> Scan to Pay USDT
+                        </span>
+                        <span class="text-[11px] font-mono text-[#26a17b] font-bold" x-text="(nowPaymentsData ? nowPaymentsData.network : '').toUpperCase()"></span>
+                    </div>
+
+                    <!-- QR Code Display -->
+                    <div class="flex flex-col items-center justify-center py-2">
+                        <template x-if="nowPaymentsData && nowPaymentsData.qr_url">
+                            <div class="w-48 h-48 bg-white p-2.5 rounded-lg shadow-md flex items-center justify-center border-2 border-[#26a17b]">
+                                <img :src="nowPaymentsData.qr_url" alt="USDT Deposit QR" class="w-full h-full object-contain rounded" loading="lazy">
+                            </div>
+                        </template>
+                        <p class="text-[11px] text-[#8b949e] mt-2 text-center">
+                            Scan with your crypto wallet (TrustWallet, Binance, OKX, MetaMask)
+                        </p>
+                    </div>
+
+                    <!-- Exact Amount to Send -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-[#8b949e] mb-1">Exact Amount to Send</label>
+                        <div class="flex items-center gap-2 p-2.5 rounded bg-[#0d1117] border border-[#30363d] font-mono text-sm font-bold text-[#26a17b]">
+                            <span class="flex-1" x-text="(nowPaymentsData ? nowPaymentsData.pay_amount : amount) + ' USDT'"></span>
+                            <button type="button" @click="copyText(nowPaymentsData ? nowPaymentsData.pay_amount : amount)" class="gh-btn py-0.5 px-2.5 text-[11px]">
+                                <i class="fa-regular fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Deposit Address -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-[#8b949e] mb-1">Deposit Address (<span x-text="nowPaymentsData ? nowPaymentsData.network : ''"></span>)</label>
+                        <div class="flex items-center gap-2 p-2.5 rounded bg-[#0d1117] border border-[#30363d] font-mono text-xs">
+                            <span class="text-[#58a6ff] font-bold flex-1 select-all break-all text-[11px]" x-text="nowPaymentsData ? nowPaymentsData.pay_address : ''"></span>
+                            <button type="button" @click="copyText(nowPaymentsData ? nowPaymentsData.pay_address : '')" class="gh-btn py-0.5 px-2.5 text-[11px] shrink-0">
+                                <i class="fa-regular fa-copy mr-1"></i>Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payin Extra ID / Memo if required -->
+                    <template x-if="nowPaymentsData && nowPaymentsData.payin_extra_id">
+                        <div class="p-3 rounded-lg bg-[rgba(210,153,34,0.12)] border border-[#d29922]/40 text-xs space-y-1">
+                            <div class="flex items-center justify-between font-bold text-[#d29922]">
+                                <span><i class="fa-solid fa-triangle-exclamation mr-1"></i> MEMO / TAG REQUIRED:</span>
+                                <button type="button" @click="copyText(nowPaymentsData.payin_extra_id)" class="gh-btn py-0.5 px-2 text-[10px]">Copy Memo</button>
+                            </div>
+                            <p class="font-mono font-bold text-[#f0f6fc] text-sm select-all" x-text="nowPaymentsData.payin_extra_id"></p>
+                            <p class="text-[10px] text-[#8b949e]">You MUST include this memo/tag when transferring, or the funds will not be credited.</p>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Right: Instructions & Auto Verification -->
+                <div class="gh-box p-5 space-y-4 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between pb-2 border-b border-[#21262d]">
+                            <span class="text-xs font-bold text-[#f0f6fc] flex items-center gap-1.5">
+                                <i class="fa-solid fa-info-circle text-[#58a6ff]"></i> Deposit Guide & Status
+                            </span>
+                            <span class="text-[10px] text-[#8b949e] font-mono">Automated IPN</span>
+                        </div>
+
+                        <!-- Step-by-step instructions -->
+                        <div class="space-y-2.5 text-xs text-[#c9d1d9]">
+                            <div class="flex items-start gap-2.5 p-2 rounded bg-[#161b22] border border-[#21262d]">
+                                <span class="w-5 h-5 rounded-full bg-[#58a6ff]/20 text-[#58a6ff] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                                <div>
+                                    <strong class="text-[#f0f6fc]">Send Exact Amount</strong>
+                                    <p class="text-[11px] text-[#8b949e] mt-0.5">Send exactly the displayed amount from any crypto wallet or exchange.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2.5 p-2 rounded bg-[#26a17b]/20 text-[#26a17b] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                                <div>
+                                    <strong class="text-[#f0f6fc]">Automatic Blockchain Verification</strong>
+                                    <p class="text-[11px] text-[#8b949e] mt-0.5">NOWPayments webhook verifies the payment once required network confirmations occur (typically 1-3 mins).</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2.5 p-2 rounded bg-[#3fb950]/20 text-[#3fb950] flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                                <div>
+                                    <strong class="text-[#f0f6fc]">Instant Wallet Credit</strong>
+                                    <p class="text-[11px] text-[#8b949e] mt-0.5">Your USDT wallet balance will be updated automatically. You may leave or refresh this page.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Polling Indicator -->
+                        <div class="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[#8b949e] text-[11px]">Auto-Verification:</span>
+                                <span class="flex items-center gap-1.5 text-[#3fb950] text-[11px] font-mono">
+                                    <span class="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse"></span>
+                                    <span>Polling live every 12s</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-[#8b949e]">NOWPayments ID:</span>
+                                <span class="font-mono text-[#f0f6fc]" x-text="nowPaymentsData ? nowPaymentsData.provider_payment_id : ''"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-[#21262d] space-y-2">
+                        <button type="button" @click="checkNowPaymentsStatusManually()" :disabled="loading"
+                                class="gh-btn w-full py-2 text-xs font-semibold flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate text-[11px]" :class="loading ? 'fa-spin' : ''"></i>
+                            <span>Check Payment Status Manually</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Payment Confirmed -->
+        <div x-show="nowPaymentsStep === 3" class="gh-box p-8 text-center space-y-4">
+            <div class="w-16 h-16 rounded-full bg-[#238636]/20 border-2 border-[#3fb950] flex items-center justify-center mx-auto text-[#3fb950] text-2xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-lg font-bold text-[#f0f6fc]">USDT Deposit Successfully Confirmed!</h3>
+                <p class="text-xs text-[#8b949e]">Your payment has been verified on the blockchain and credited directly to your USDT balance.</p>
+            </div>
+            <div class="pt-4 flex items-center justify-center gap-3">
+                <button type="button" @click="nowPaymentsStep = 1; amount = 10; fetchDeposits()" class="gh-btn-primary py-2 px-4 text-xs font-semibold">
+                    <i class="fa-solid fa-plus mr-1"></i> Make Another Deposit
+                </button>
+                <a href="/dashboard" class="gh-btn py-2 px-4 text-xs font-semibold">
+                    <i class="fa-solid fa-house mr-1"></i> Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- AUTOMATED GATEWAYS (Dynamic UPI / Cryptomus)             -->
     <!-- ======================================================== -->
-    <div x-show="selectedMethod !== 'manual_upi'" x-cloak class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div x-show="selectedMethod !== 'manual_upi' && selectedMethod !== 'nowpayments'" x-cloak class="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <!-- Info Left -->
         <div class="lg:col-span-2 gh-box p-5 space-y-3">
             <template x-if="selectedMethod === 'fampay'">
@@ -581,9 +976,11 @@
                     <template x-for="d in deposits" :key="d.id">
                         <tr class="gh-box-row hover:bg-[#161b22]/70 transition-colors">
                             <td class="py-2.5 px-4 font-mono text-[11px] font-bold text-[#58a6ff]" x-text="d.reference"></td>
-                            <td class="py-2.5 px-4 capitalize" x-text="(d.payment_method || 'UPI').replace('_', ' ')"></td>
+                            <td class="py-2.5 px-4 capitalize" x-text="(d.payment_method === 'nowpayments' ? 'USDT Direct' : (d.payment_method || 'UPI')).replace('_', ' ')"></td>
                             <td class="py-2.5 px-4 font-mono text-[11px] text-[#c9d1d9]" x-text="d.utr_number || '—'"></td>
-                            <td class="py-2.5 px-4 font-bold text-[#3fb950] font-mono text-xs" x-text="'₹' + parseFloat(d.amount).toLocaleString('en-IN', {minimumFractionDigits: 2})"></td>
+                            <td class="py-2.5 px-4 font-bold font-mono text-xs"
+                                :class="d.currency === 'USDT' ? 'text-[#26a17b]' : 'text-[#3fb950]'"
+                                x-text="d.currency === 'USDT' ? (parseFloat(d.amount).toFixed(4) + ' USDT') : ('₹' + parseFloat(d.amount).toLocaleString('en-IN', {minimumFractionDigits: 2}))"></td>
                             <td class="py-2.5 px-4">
                                 <span :class="statusBadge(d.status)" class="text-[10px]" x-text="d.status"></span>
                             </td>

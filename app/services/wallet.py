@@ -17,7 +17,7 @@ def debit_wallet(
     description: str
 ):
     """
-    Atomically deduct money from user's wallet.
+    Atomically deduct money from user's INR wallet.
 
     Uses PostgreSQL row-level locking so two simultaneous
     orders cannot spend the same wallet balance.
@@ -43,6 +43,7 @@ def debit_wallet(
     transaction = Transaction(
         user_id=user.id,
         amount=-amount,
+        currency="INR",
         transaction_type="order",
         status="Completed",
         description=description
@@ -59,17 +60,23 @@ def credit_wallet(
     user_id: int,
     amount: Decimal,
     transaction_type: str,
-    description: str
+    description: str,
+    currency: str = "INR",
 ):
     """
-    Atomically add money to user's wallet.
+    Atomically add money to user's INR wallet (default) or USDT wallet.
 
-    Uses PostgreSQL row-level locking to prevent
-    concurrent wallet update problems.
+    Uses PostgreSQL row-level locking to prevent concurrent wallet
+    update problems.
+
+    For USDT deposits: credits user.balance_usdt, NOT user.balance (INR).
+    For INR deposits: credits user.balance.
     """
 
     if amount <= 0:
         raise ValueError("Amount must be greater than zero")
+
+    currency = currency.upper()
 
     user = db.scalar(
         select(User)
@@ -80,11 +87,16 @@ def credit_wallet(
     if not user:
         raise ValueError("User not found")
 
-    user.balance += amount
+    if currency == "USDT":
+        user.balance_usdt += amount
+    else:
+        # Default: INR
+        user.balance += amount
 
     transaction = Transaction(
         user_id=user.id,
         amount=amount,
+        currency=currency,
         transaction_type=transaction_type,
         status="Completed",
         description=description

@@ -6,11 +6,13 @@ from app.payments.base import BasePaymentProvider
 from app.payments.cryptomus import CryptomusProvider
 from app.payments.fampay import FamGatewayProvider
 from app.payments.binancepay import BinancePayProvider
+from app.payments.nowpayments import NOWPaymentsProvider
 
 _PROVIDERS: Dict[str, BasePaymentProvider] = {
     "fampay": FamGatewayProvider(),
     "cryptomus": CryptomusProvider(),
     "binancepay": BinancePayProvider(),
+    "nowpayments": NOWPaymentsProvider(),
 }
 
 
@@ -96,7 +98,28 @@ def get_available_payment_methods(user: User, db: Session) -> List[dict]:
         "description": "Pay with Binance App or Binance Web via QR code or direct checkout. Instant automatic confirmation." if binance_provider.is_configured() else "Awaiting Binance Pay merchant API credentials activation in server configuration."
     })
 
-    # 5. Payeer & Payoneer (Reported as disabled as required by prompt)
+    # 5. NOWPayments — USDT Direct (new)
+    nowpayments_provider = _PROVIDERS["nowpayments"]
+    methods.append({
+        "id":                   "nowpayments",
+        "name":                 "USDT — NOWPayments (TRC20 / BSC / Polygon / ERC20 / SOL)",
+        "type":                 "crypto_usdt",
+        "is_enabled":           nowpayments_provider.is_configured(),
+        "min_amount":           "1",
+        "max_amount":           "100000",
+        "currency":             "USDT",
+        "requires_utr":         False,
+        "supports_screenshot":  False,
+        "description": (
+            "Pay with USDT on TRC-20, BSC (BEP-20), Polygon, ERC-20 or Solana. "
+            "Wallet credited in USDT. Instant on-chain confirmation."
+        ) if nowpayments_provider.is_configured() else (
+            "NOWPayments USDT integration awaiting API configuration."
+        ),
+        "networks": nowpayments_provider.get_supported_networks() if nowpayments_provider.is_configured() else [],
+    })
+
+    # 6. Payeer & Payoneer (disabled)
     methods.append({
         "id": "payeer",
         "name": "Payeer",

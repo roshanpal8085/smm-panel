@@ -22,6 +22,10 @@ MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 def get_deposit_limits(db: Session, payment_method: str) -> tuple[Decimal, Decimal]:
     """Returns (min_amount, max_amount) for a given payment method."""
+    if payment_method == "nowpayments":
+        # USDT minimum is 1 USDT, maximum 100,000 USDT
+        return Decimal("1.00"), Decimal("100000.00")
+
     min_setting = db.scalar(select(SystemSetting.value).where(SystemSetting.key == "min_deposit"))
     min_amount = Decimal(min_setting) if min_setting else Decimal("50.00")
 
@@ -200,12 +204,16 @@ def process_deposit_completion(
     verified_utr: Optional[str] = None,
     admin_user: Optional[User] = None,
     admin_notes: Optional[str] = None,
-    provider_tx_id: Optional[str] = None
+    provider_tx_id: Optional[str] = None,
+    credit_currency: str = "INR",
 ) -> PaymentTransaction:
     """
     CRITICAL FINANCIAL FUNCTION:
     Atomically verifies, credits wallet, and completes a deposit exactly once.
     Uses PostgreSQL row-level locking (with_for_update) to prevent race conditions.
+
+    credit_currency: "INR" (default) or "USDT" — determines which wallet column is credited.
+    NOWPayments deposits pass "USDT" here so balance_usdt is incremented, not balance (INR).
     """
     deposit = db.scalar(
         select(PaymentTransaction)
@@ -225,6 +233,7 @@ def process_deposit_completion(
         raise HTTPException(status_code=400, detail=f"Cannot complete deposit with status '{deposit.status}'")
 
     credit_amount = verified_amount if verified_amount is not None else deposit.amount
+    currency_label = credit_currency.upper()
 
     # Update payment transaction record
     deposit.status = "Completed"
@@ -238,22 +247,26 @@ def process_deposit_completion(
         deposit.admin_notes = admin_notes or f"Approved by admin {admin_user.username}"
 
     # Atomic wallet credit using row-level locking
-    description = f"Deposit credit: {deposit.reference}"
-    if deposit.utr_number:
-        description += f" (UTR: {deposit.utr_number})"
+    description = f"Deposit credit ({currency_label}): {deposit.reference}"
+    if verified_utr:
+        description += f" (TX: {verified_utr[:24]})"
 
     credit_wallet(
         db=db,
         user_id=deposit.user_id,
         amount=credit_amount,
         transaction_type="deposit",
-        description=description
+        description=description,
+        currency=currency_label,
     )
 
     db.commit()
     db.refresh(deposit)
 
-    logger.info(f"Deposit #{deposit.id} (Ref: {deposit.reference}) successfully completed for ₹{credit_amount}")
+    logger.info(
+        f"Deposit #{deposit.id} (Ref: {deposit.reference}) successfully completed "
+        f"for {credit_amount} {currency_label}"
+    )
     return deposit
 
 

@@ -54,6 +54,12 @@ class User(Base):
         nullable=False
     )
 
+    balance_usdt: Mapped[Decimal] = mapped_column(
+        Numeric(18, 4),
+        default=Decimal("0.0000"),
+        nullable=False
+    )
+
     api_key: Mapped[str | None] = mapped_column(
         String(64),
         unique=True,
@@ -387,6 +393,12 @@ class Transaction(Base):
         nullable=False
     )
 
+    currency: Mapped[str] = mapped_column(
+        String(10),
+        default="INR",
+        nullable=False
+    )
+
     transaction_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False
@@ -534,7 +546,7 @@ class PaymentTransaction(Base):
     )
 
     currency: Mapped[str] = mapped_column(
-        String(3),
+        String(10),
         nullable=False,
         default="INR"
     )
@@ -613,6 +625,26 @@ class PaymentTransaction(Base):
 
     provider_status: Mapped[str | None] = mapped_column(
         String(50),
+        nullable=True
+    )
+
+    actually_paid: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True
+    )
+
+    outcome_amount: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 8),
+        nullable=True
+    )
+
+    pay_currency: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True
+    )
+
+    tx_hash: Mapped[str | None] = mapped_column(
+        String(255),
         nullable=True
     )
 

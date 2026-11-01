@@ -23,8 +23,12 @@
                     <span>Wallet Balance</span>
                     <i class="fa-solid fa-wallet text-[#58a6ff]"></i>
                 </div>
-                <div class="text-2xl font-black text-[#f0f6fc] font-mono mb-3">
+                <div class="text-2xl font-black text-[#f0f6fc] font-mono mb-1">
                     ₹<span id="sidebar-balance">{{ user.balance }}</span>
+                </div>
+                <div class="text-xs font-mono text-[#26a17b] font-semibold mb-3 flex items-center gap-1">
+                    <span>{{ "%.4f"|format(user.balance_usdt|float) if user.balance_usdt is defined and user.balance_usdt else "0.0000" }}</span>
+                    <span class="text-[10px] text-[#8b949e]">USDT</span>
                 </div>
                 <a href="/add-funds" class="w-full py-2 px-3 rounded-lg btn-git-primary text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
                     <i class="fa-solid fa-plus text-[10px]"></i> Add Funds
@@ -153,6 +157,9 @@
                 <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs">
                     <span class="text-[#8b949e] font-medium">Balance:</span>
                     <span class="font-extrabold text-[#3fb950] text-sm font-mono">₹<span id="header-balance">{{ user.balance }}</span></span>
+                    {% if user.balance_usdt is defined and user.balance_usdt and user.balance_usdt > 0 %}
+                    <span class="font-extrabold text-[#26a17b] text-xs font-mono ml-1 pl-2 border-l border-[#30363d]">{{ "%.4f"|format(user.balance_usdt|float) }} USDT</span>
+                    {% endif %}
                 </div>
 
                 <a href="/new-order" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg btn-git-primary text-xs font-bold transition-all">

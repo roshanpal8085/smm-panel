@@ -128,6 +128,14 @@ def run_migrations():
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_service_id VARCHAR(50);",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_sync_error TEXT;",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS sync_attempts INTEGER DEFAULT 0;",
+            # NOWPayments / USDT wallet support
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS balance_usdt NUMERIC(18, 4) DEFAULT 0.0000 NOT NULL;",
+            "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'INR' NOT NULL;",
+            "ALTER TABLE payment_transactions ALTER COLUMN currency TYPE VARCHAR(10);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS actually_paid NUMERIC(18, 8);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS outcome_amount NUMERIC(18, 8);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS pay_currency VARCHAR(30);",
+            "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS tx_hash VARCHAR(255);",
         ]
         with engine.connect() as conn:
             for statement in migration_statements:
