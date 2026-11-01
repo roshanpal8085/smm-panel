@@ -21,7 +21,7 @@
             if (data.success) {
                 this.services = data.services;
                 const cats = new Set(this.services.map(s => s.category));
-                this.categories = ['All', ...Array.from(cats).sort()];
+                this.categories = ['All', ...Array.from(cats)];
             }
         } catch(e) {
             console.error(e);

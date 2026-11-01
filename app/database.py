@@ -107,6 +107,7 @@ def run_migrations():
             "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_status VARCHAR(50);",
             "ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS provider_payload TEXT;",
             # Service catalog & availability
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 999999;",
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_name VARCHAR(100) DEFAULT 'vipsmmpro';",
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS provider_available BOOLEAN DEFAULT TRUE;",
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS customer_visible BOOLEAN DEFAULT TRUE;",
@@ -264,3 +265,32 @@ def run_migrations():
                 smmxpert_provider.api_key = _xpert_key
             smmxpert_provider.is_active = True
             db.commit()
+
+        # 4. Ensure service sort_order matches provider panel order
+        try:
+            unindexed_count = db.query(models.Service).filter(
+                (models.Service.sort_order == 999999) | (models.Service.sort_order == 0)
+            ).count()
+            total_svcs = db.query(models.Service).count()
+            if total_svcs > 0 and unindexed_count > 50:
+                active_providers = db.query(models.ProviderSetting).filter(
+                    models.ProviderSetting.is_active == True
+                ).order_by(models.ProviderSetting.id.asc()).all()
+                for p in active_providers:
+                    if not p.api_key or not p.api_url:
+                        continue
+                    try:
+                        from app.providers.registry import build_adapter
+                        adapter = build_adapter(p)
+                        remote = adapter.get_services()
+                        provider_offset = 0 if p.slug == "vipsmmpro" or getattr(p, "is_default", False) else (getattr(p, "id", 1) * 10000)
+                        id_to_order = {int(s.provider_service_id): (provider_offset + i) for i, s in enumerate(remote)}
+                        svcs = db.query(models.Service).filter(models.Service.provider_name == p.slug).all()
+                        for s in svcs:
+                            if s.provider_service_id in id_to_order:
+                                s.sort_order = id_to_order[s.provider_service_id]
+                        db.commit()
+                    except Exception as p_err:
+                        print(f"Provider service order sync notice ({p.slug}): {p_err}")
+        except Exception as sync_err:
+            print(f"Service sort order initialization notice: {sync_err}")

@@ -67,7 +67,10 @@ def import_services_from_provider(
     now = datetime.utcnow()
     seen_ids: set[int] = set()
 
-    for svc in remote_services:
+    provider_offset = 0 if slug == "vipsmmpro" or getattr(provider_setting, "is_default", False) else (getattr(provider_setting, "id", 1) * 10000)
+
+    for idx, svc in enumerate(remote_services):
+        item_sort_order = provider_offset + idx
         try:
             pid = int(svc.provider_service_id)
         except (ValueError, TypeError):
@@ -97,6 +100,7 @@ def import_services_from_provider(
                 existing.category = svc.category
                 existing.service_type = svc.service_type
                 existing.provider_rate = svc.rate
+                existing.sort_order = item_sort_order
                 # Only recalculate if no manual price_override
                 if existing.price_override is None:
                     existing.selling_rate = selling_rate
@@ -110,6 +114,7 @@ def import_services_from_provider(
             else:
                 new_svc = Service(
                     provider_service_id=pid,
+                    sort_order=item_sort_order,
                     name=svc.name,
                     category=svc.category,
                     service_type=svc.service_type,

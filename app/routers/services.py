@@ -96,7 +96,7 @@ def get_services(
             | func.lower(Service.category).like(query)
         )
 
-    stmt = stmt.order_by(Service.category, Service.id)
+    stmt = stmt.order_by(Service.sort_order.asc(), Service.id.asc())
     services = db.scalars(stmt).all()
 
     return {
@@ -138,7 +138,7 @@ def get_categories(
             Service.provider_available == True
         )
         .group_by(Service.category)
-        .order_by(Service.category)
+        .order_by(func.min(Service.sort_order).asc())
     ).all()
 
     return {
@@ -250,7 +250,7 @@ def get_admin_catalog(
             stmt = stmt.where(Service.provider_available == False)
 
     total_count = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
-    services = db.scalars(stmt.order_by(Service.category, Service.id).limit(limit).offset(offset)).all()
+    services = db.scalars(stmt.order_by(Service.sort_order.asc(), Service.id.asc()).limit(limit).offset(offset)).all()
 
     global_markup = get_global_markup_percent(db)
 

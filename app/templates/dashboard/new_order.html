@@ -104,7 +104,7 @@
             if (data.success) {
                 this.services = data.services;
                 const cats = new Set(this.services.map(s => s.category));
-                this.categories = Array.from(cats).sort();
+                this.categories = Array.from(cats);
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const preselectedId = urlParams.get('service');

@@ -54,7 +54,7 @@ async def reseller_api_v2_handler(
         services = db.scalars(
             select(Service)
             .where(Service.is_active == True)
-            .order_by(Service.category, Service.id)
+            .order_by(Service.sort_order.asc(), Service.id.asc())
         ).all()
 
         return [
