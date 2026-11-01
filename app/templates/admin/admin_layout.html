@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex,nofollow">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="apple-touch-icon" href="/static/logo-icon.svg">
     <title>{% block title %}Admin Console | Yoomo{% endblock %}</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -241,13 +243,11 @@
         <aside class="hidden lg:flex flex-col w-64 bg-[#0d1117] border-r border-[#30363d] fixed inset-y-0 z-30 select-none">
             <!-- Brand / Console Header -->
             <div class="h-14 flex items-center px-4 border-b border-[#30363d] justify-between">
-                <a href="/admin/dashboard" class="flex items-center gap-2.5 text-[#f0f6fc] hover:text-[#e3b341] transition-colors">
-                    <div class="w-8 h-8 rounded-md bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#e3b341]">
-                        <i class="fa-solid fa-shield-halved text-sm"></i>
-                    </div>
+                <a href="/admin/dashboard" class="flex items-center gap-2.5 text-[#f0f6fc] hover:text-[#a78bfa] transition-colors">
+                    <img src="/static/logo-icon.svg" alt="Yoomo Logo" class="w-7 h-7 rounded-lg shadow-sm" width="28" height="28">
                     <div>
-                        <span class="text-xs font-bold text-[#f0f6fc] block">yoomo</span>
-                        <span class="text-[10px] font-mono text-[#d29922] font-semibold block uppercase">Admin Console</span>
+                        <span class="text-xs font-black text-[#f0f6fc] block">Yoo<span class="text-[#a78bfa]">mo</span></span>
+                        <span class="text-[9px] font-mono text-[#d29922] font-semibold block uppercase">Admin Console</span>
                     </div>
                 </a>
                 <span class="text-[10px] font-mono px-1.5 py-0.5 rounded border border-[rgba(227,179,65,0.3)] text-[#e3b341] bg-[rgba(210,153,34,0.15)] font-bold">SUPER</span>

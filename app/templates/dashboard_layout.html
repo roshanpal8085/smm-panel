@@ -10,11 +10,9 @@
     <aside class="hidden lg:flex flex-col w-64 bg-[#161b22] border-r border-[#30363d] fixed inset-y-0 z-30 select-none">
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-[#30363d]">
-            <a href="/" class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">
-                    Y
-                </div>
-                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
+            <a href="/" class="flex items-center gap-2.5">
+                <img src="/static/logo-icon.svg" alt="Yoomo Logo" class="w-8 h-8 rounded-lg shadow-md" width="32" height="32">
+                <span class="text-lg font-black text-[#f0f6fc]">Yoo<span class="text-[#a78bfa]">mo</span></span>
             </a>
         </div>
 
@@ -110,7 +108,10 @@
         <div @click="sidebarOpen = false" class="fixed inset-0 bg-black/70 backdrop-blur-sm"></div>
         <div class="relative flex flex-col w-64 max-w-[80%] bg-[#161b22] border-r border-[#30363d] h-full p-4 space-y-4">
             <div class="flex items-center justify-between border-b border-[#30363d] pb-3">
-                <span class="text-lg font-black text-[#f0f6fc]">Yoomo</span>
+                <div class="flex items-center gap-2">
+                    <img src="/static/logo-icon.svg" alt="Yoomo Logo" class="w-7 h-7 rounded-lg" width="28" height="28">
+                    <span class="text-lg font-black text-[#f0f6fc]">Yoo<span class="text-[#a78bfa]">mo</span></span>
+                </div>
                 <button @click="sidebarOpen = false" class="text-[#8b949e] hover:text-white">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>

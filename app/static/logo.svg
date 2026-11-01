@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="50%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f0f6fc"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="dot-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#7c3aed" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Icon Container (36x36) -->
+  <g transform="translate(2, 2)">
+    <rect width="36" height="36" rx="10" fill="url(#logo-grad)" filter="url(#logo-glow)"/>
+    <rect x="0.5" y="0.5" width="35" height="35" rx="9.5" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1"/>
+    <!-- Stylized Y -->
+    <path d="M11 11L18 20M25 11L18 20M18 20V27" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="25" cy="11" r="2.5" fill="url(#dot-accent)"/>
+    <circle cx="11" cy="11" r="1.8" fill="#FFFFFF" opacity="0.85"/>
+  </g>
+
+  <!-- Brand Typography "Yoomo" -->
+  <text x="48" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Plus Jakarta Sans', sans-serif" font-size="22" font-weight="900" letter-spacing="-0.5" fill="#f0f6fc">
+    Yoo<tspan fill="#a78bfa">mo</tspan>
+  </text>
+  <!-- Growth Sparkle in Text -->
+  <circle cx="132" cy="14" r="2" fill="#38bdf8"/>
+</svg>

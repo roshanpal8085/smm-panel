@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="50%" stop-color="#161b22"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <linearGradient id="y-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="50%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="cyan-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="glow-bg" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#7c3aed" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="600" cy="260" r="450" fill="url(#glow-bg)"/>
+
+  <!-- Grid Pattern Overlay -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="1">
+    <path d="M0 70H1200M0 140H1200M0 210H1200M0 280H1200M0 350H1200M0 420H1200M0 490H1200M0 560H1200"/>
+    <path d="M100 0V630M200 0V630M300 0V630M400 0V630M500 0V630M600 0V630M700 0V630M800 0V630M900 0V630M1000 0V630M1100 0V630"/>
+  </g>
+
+  <!-- Centered Logo Icon (110x110) -->
+  <g transform="translate(545, 130)">
+    <rect width="110" height="110" rx="30" fill="url(#y-grad)" filter="url(#shadow)"/>
+    <rect x="1" y="1" width="108" height="108" rx="29" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2"/>
+    <path d="M32 30L55 58M78 30L55 58M55 58V80" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="78" cy="30" r="7" fill="url(#cyan-accent)"/>
+    <circle cx="32" cy="30" r="5" fill="#FFFFFF" opacity="0.9"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="600" y="320" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Plus Jakarta Sans', sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5" fill="#f0f6fc">
+    Yoo<tspan fill="#a78bfa">mo</tspan>
+  </text>
+
+  <text x="600" y="380" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Plus Jakarta Sans', sans-serif" font-size="28" font-weight="700" letter-spacing="0.5" fill="#e2e8f0">
+    India's #1 Wholesale SMM Panel
+  </text>
+
+  <text x="600" y="420" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Plus Jakarta Sans', sans-serif" font-size="18" font-weight="500" fill="#8b949e">
+    Instant Delivery · Wholesale Rates · Universal REST API v2 · 24/7 Support
+  </text>
+
+  <!-- Domain Pill Badge -->
+  <g transform="translate(485, 470)">
+    <rect width="230" height="44" rx="22" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <circle cx="28" cy="22" r="4.5" fill="#3fb950"/>
+    <text x="44" y="28" font-family="ui-monospace, 'SF Mono', monospace" font-size="16" font-weight="700" fill="#f0f6fc">
+      https://yoomo.in
+    </text>
+  </g>
+</svg>

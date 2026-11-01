@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Yoomo | India's #1 SMM Panel — Instant Social Media Growth{% endblock %}</title>
     <meta name="description" content="Yoomo is India's best SMM panel offering cheap and instant delivery for Instagram, YouTube, Telegram, Twitter and more social media growth services.">
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" type="image/svg+xml" href="/static/logo-icon.svg">
+    <link rel="apple-touch-icon" href="/static/logo-icon.svg">
     <!-- Canonical & Robots -->
     <link rel="canonical" href="https://yoomo.in{% block canonical_path %}/{% endblock %}">
     {% block noindex %}{% endblock %}
@@ -14,12 +18,12 @@
     <meta property="og:title" content="{% block og_title %}Yoomo | India's #1 SMM Panel{% endblock %}">
     <meta property="og:description" content="{% block og_desc %}India's best SMM panel for cheap Instagram followers, YouTube views, Telegram members and more. Instant delivery. Wholesale rates.{% endblock %}">
     <meta property="og:url" content="https://yoomo.in{% block og_url %}/{% endblock %}">
-    <meta property="og:image" content="https://yoomo.in/static/og-image.png">
+    <meta property="og:image" content="https://yoomo.in/static/og-image.svg">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}Yoomo | India's #1 SMM Panel{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_desc %}Cheap, fast SMM services for Instagram, YouTube, Telegram and more. Join Yoomo today.{% endblock %}">
-    <meta name="twitter:image" content="https://yoomo.in/static/og-image.png">
+    <meta name="twitter:image" content="https://yoomo.in/static/og-image.svg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -312,13 +316,11 @@
     <header class="sticky top-0 z-40 bg-[#161b22] border-b border-[#30363d] transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <!-- Brand Logo -->
-            <a href="/" class="flex items-center gap-3 group">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white shadow-md shadow-violet-900/30 group-hover:scale-105 transition-transform">
-                    <span class="text-sm font-black">Y</span>
-                </div>
+            <a href="/" class="flex items-center gap-2.5 group">
+                <img src="/static/logo-icon.svg" alt="Yoomo Logo" class="w-9 h-9 rounded-xl shadow-md shadow-violet-900/30 group-hover:scale-105 transition-transform" width="36" height="36">
                 <div>
                     <span class="text-xl font-black tracking-tight text-[#f0f6fc] flex items-center gap-1">
-                        Yoomo
+                        Yoo<span class="text-[#a78bfa]">mo</span>
                     </span>
                     <span class="block text-[9px] font-semibold tracking-widest uppercase text-[#8b949e] -mt-1">SMM Panel · India</span>
                 </div>
@@ -393,10 +395,8 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
                 <div class="space-y-3 md:col-span-1">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#4f46e5] flex items-center justify-center text-white font-black text-sm">
-                            Y
-                        </div>
-                        <span class="text-lg font-extrabold text-[#f0f6fc]">Yoomo</span>
+                        <img src="/static/logo-icon.svg" alt="Yoomo Logo" class="w-8 h-8 rounded-lg shadow-md" width="32" height="32">
+                        <span class="text-lg font-extrabold text-[#f0f6fc]">Yoo<span class="text-[#a78bfa]">mo</span></span>
                     </div>
                     <p class="text-xs text-[#8b949e] leading-relaxed">
                         India's trusted SMM panel for instant social media growth. Automated order delivery, direct wholesale rates, and 24/7 dedicated support.
