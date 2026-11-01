@@ -64,7 +64,7 @@ def page_services_list(
         "user": user,
         **get_system_context(db)
     }
-    return render_template(request, "public/services_list.html", ctx)
+    return render_template(request, "pages/services_list.html", ctx)
 
 
 @router.get("/api-docs")
@@ -77,7 +77,7 @@ def page_api_docs(
         "user": user,
         **get_system_context(db)
     }
-    return render_template(request, "public/api_docs.html", ctx)
+    return render_template(request, "pages/api_docs.html", ctx)
 
 
 @router.get("/login")
@@ -434,7 +434,7 @@ def page_privacy(
     db: Session = Depends(get_db)
 ):
     ctx = {"user": user, **get_system_context(db)}
-    return render_template(request, "public/privacy_policy.html", ctx)
+    return render_template(request, "pages/privacy_policy.html", ctx)
 
 
 @router.get("/terms-of-service")
@@ -444,7 +444,7 @@ def page_terms(
     db: Session = Depends(get_db)
 ):
     ctx = {"user": user, **get_system_context(db)}
-    return render_template(request, "public/terms_of_service.html", ctx)
+    return render_template(request, "pages/terms_of_service.html", ctx)
 
 
 @router.get("/refund-policy")
@@ -454,7 +454,7 @@ def page_refund(
     db: Session = Depends(get_db)
 ):
     ctx = {"user": user, **get_system_context(db)}
-    return render_template(request, "public/refund_policy.html", ctx)
+    return render_template(request, "pages/refund_policy.html", ctx)
 
 
 @router.get("/robots.txt", response_class=Response)
