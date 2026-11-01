@@ -37,26 +37,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class CanonicalDomainMiddleware(BaseHTTPMiddleware):
-    """
-    Production domain normalization:
-    - Permanent 301 redirect from www.yoomo.in to canonical https://yoomo.in
-    (HTTPS enforcement is handled at the Render/Vercel edge proxy level to prevent infinite proxy loops).
-    """
-    async def dispatch(self, request: Request, call_next):
-        host = request.headers.get("host", "").lower().split(":")[0]
-
-        if host == "www.yoomo.in":
-            path = request.url.path
-            query = f"?{request.url.query}" if request.url.query else ""
-            return RedirectResponse(
-                url=f"https://yoomo.in{path}{query}",
-                status_code=301
-            )
-
-        return await call_next(request)
-
-
 class VercelPathMiddleware(BaseHTTPMiddleware):
     """
     Normalizes requests routed through Vercel rewrites:
@@ -144,9 +124,6 @@ app = FastAPI(
     lifespan=lifespan,
     redirect_slashes=False
 )
-
-# Canonical Domain & HTTPS Redirect (www.yoomo.in -> yoomo.in)
-app.add_middleware(CanonicalDomainMiddleware)
 
 # Vercel Path Normalization (restores path from ?path=$1 rewrite)
 app.add_middleware(VercelPathMiddleware)
