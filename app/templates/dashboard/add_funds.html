@@ -1,4 +1,4 @@
-{% extends "dashboard_layout.html" %}
+﻿{% extends "dashboard_layout.html" %}
 
 {% block title %}Add Funds & Billing | Yoomo{% endblock %}
 
@@ -327,7 +327,7 @@
     </div>
 
     <!-- Payment Method Selector Tabs -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+    <div class="grid grid-cols-3 gap-2.5">
         {% if user.can_manual_upi %}
         <button type="button" @click="selectedMethod = 'manual_upi'; manualStep = 1; error = ''"
             :class="selectedMethod === 'manual_upi' 
@@ -379,37 +379,6 @@
             <span class="text-[10px] text-[#26a17b] font-mono font-medium">NOWPayments · TRC20/BSC</span>
         </button>
 
-        <button type="button" @click="selectedMethod = 'binancepay'; error = ''"
-            :class="selectedMethod === 'binancepay' 
-                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
-                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
-            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
-            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
-                  :class="selectedMethod === 'binancepay' 
-                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
-                      : 'border-[#484f58] bg-[#0d1117]'">
-                <span x-show="selectedMethod === 'binancepay'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-            </span>
-            <i class="fa-solid fa-coins text-base" :class="selectedMethod === 'binancepay' ? 'text-[#f3ba2f]' : 'text-[#8b949e]'"></i>
-            <span class="text-xs font-semibold">Binance Pay</span>
-            <span class="text-[10px] text-[#f3ba2f] font-mono font-medium">0% Fee · USDT</span>
-        </button>
-
-        <button type="button" @click="selectedMethod = 'cryptomus'; error = ''"
-            :class="selectedMethod === 'cryptomus' 
-                ? 'bg-[#1f6feb]/15 text-[#58a6ff] border-[#58a6ff] shadow-sm font-bold' 
-                : 'bg-[#161b22] text-[#c9d1d9] border-[#30363d] hover:border-[#8b949e] hover:bg-[#21262d]'"
-            class="relative p-3 rounded-md border text-center transition-all flex flex-col items-center gap-1">
-            <span class="absolute top-2 right-2 w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-colors"
-                  :class="selectedMethod === 'cryptomus' 
-                      ? 'border-[#58a6ff] bg-[#58a6ff] text-white' 
-                      : 'border-[#484f58] bg-[#0d1117]'">
-                <span x-show="selectedMethod === 'cryptomus'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-            </span>
-            <i class="fa-brands fa-bitcoin text-base" :class="selectedMethod === 'cryptomus' ? 'text-[#d29922]' : 'text-[#8b949e]'"></i>
-            <span class="text-xs font-semibold">Cryptocurrency</span>
-            <span class="text-[10px] text-[#8b949e] font-mono">USDT / BTC</span>
-        </button>
     </div>
 
     <!-- ======================================================== -->
@@ -899,36 +868,6 @@
                 </div>
             </template>
 
-            <template x-if="selectedMethod === 'binancepay'">
-                <div class="space-y-3">
-                    <div class="flex items-center gap-2 font-bold text-sm text-[#f0f6fc]">
-                        <i class="fa-solid fa-coins text-[#f3ba2f]"></i> Binance Pay Merchant Gateway
-                    </div>
-                    <p class="text-xs text-[#8b949e] leading-relaxed">
-                        Pay directly from your Binance App (Scan QR) or Binance Web browser wallet with 0% network gas fees. Automatic real-time INR to USDT conversion.
-                    </p>
-                    <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1">
-                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> 0% Gas Fees via Binance Pay App & Web</p>
-                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Instant 0-second auto credit via official Merchant API</p>
-                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Supports Binance App QR scan & web payment redirect</p>
-                    </div>
-                </div>
-            </template>
-
-            <template x-if="selectedMethod === 'cryptomus'">
-                <div class="space-y-3">
-                    <div class="flex items-center gap-2 font-bold text-sm text-[#f0f6fc]">
-                        <i class="fa-brands fa-bitcoin text-[#d29922]"></i> Cryptomus Digital Currency
-                    </div>
-                    <p class="text-xs text-[#8b949e] leading-relaxed">
-                        Accepts USDT (TRC20, ERC20, BEP20, Polygon), BTC, ETH, TON, and all major cryptocurrencies with automated blockchain confirmations.
-                    </p>
-                    <div class="p-3 rounded bg-[#161b22] border border-[#21262d] text-xs text-[#8b949e] space-y-1">
-                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Global 24/7 automated credit</p>
-                        <p><i class="fa-solid fa-check text-[#3fb950] mr-1.5"></i> Zero volatility risk on stablecoins</p>
-                    </div>
-                </div>
-            </template>
         </div>
 
         <!-- Checkout Right -->
