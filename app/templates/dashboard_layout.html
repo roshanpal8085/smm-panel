@@ -17,14 +17,15 @@
         </div>
 
         <!-- User Balance Quick Card -->
-        <div class="p-4">
+        <div class="p-4" x-data>
             <div class="p-4 rounded-xl bg-[#0d1117] border border-[#30363d]">
                 <div class="text-[11px] font-bold text-[#8b949e] uppercase tracking-wider mb-1 flex items-center justify-between">
                     <span>Wallet Balance</span>
                     <i class="fa-solid fa-wallet text-[#58a6ff]"></i>
                 </div>
-                <div class="text-2xl font-black text-[#f0f6fc] font-mono mb-1">
-                    ₹<span id="sidebar-balance">{{ user.balance }}</span>
+                <div class="text-2xl font-black text-[#f0f6fc] font-mono mb-1 leading-tight">
+                    <span x-text="$store.cur.sym" class="font-sans text-xl"></span><span id="sidebar-balance" x-text="$store.cur.fmt('{{ user.balance }}')"></span>
+                    <div x-show="$store.cur.sel !== 'INR'" class="text-[11px] text-[#8b949e] font-normal font-sans mt-0.5">₹{{ user.balance }} INR</div>
                 </div>
                 <div class="text-xs font-mono text-[#26a17b] font-semibold mb-3 flex items-center gap-1">
                     <span>{{ "%.4f"|format(user.balance_usdt|float) if user.balance_usdt is defined and user.balance_usdt else "0.0000" }}</span>
@@ -152,13 +153,49 @@
             </div>
 
             <!-- Header Right -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <!-- Currency Selector -->
+                <div class="relative" x-data @click.away="$store.cur.open = false">
+                    <button @click="$store.cur.open = !$store.cur.open"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs font-medium text-[#c9d1d9] hover:border-[#8b949e] transition-colors select-none">
+                        <span x-text="$store.cur.flag" class="text-sm leading-none"></span>
+                        <span x-text="$store.cur.sel" class="font-mono font-bold text-[#f0f6fc]"></span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-[#8b949e] transition-transform duration-150" :class="$store.cur.open ? 'rotate-180' : ''"></i>
+                    </button>
+                    <!-- Dropdown -->
+                    <div x-show="$store.cur.open" x-cloak
+                        class="absolute right-0 top-full mt-1.5 w-56 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden"
+                        style="display:none">
+                        <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#8b949e] border-b border-[#21262d]">
+                            <i class="fa-solid fa-earth-asia mr-1"></i> Display Currency
+                        </div>
+                        <div class="py-1 max-h-72 overflow-y-auto">
+                            <template x-for="c in $store.cur.list" :key="c.code">
+                                <button @click="$store.cur.set(c.code)"
+                                    class="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-[#21262d] transition-colors text-left"
+                                    :class="$store.cur.sel === c.code ? 'bg-[#21262d] text-[#f0f6fc]' : 'text-[#c9d1d9]'">
+                                    <span x-text="c.flag" class="text-base w-6 text-center leading-none"></span>
+                                    <span x-text="c.code" class="font-mono font-bold w-9 text-[11px]"></span>
+                                    <span x-text="c.name" class="text-[#8b949e] text-[11px] truncate flex-1"></span>
+                                    <i x-show="$store.cur.sel === c.code" class="fa-solid fa-check text-[#3fb950] text-[10px] shrink-0"></i>
+                                </button>
+                            </template>
+                        </div>
+                        <div class="px-3 py-2 border-t border-[#21262d] text-[10px] text-[#8b949e] flex items-center gap-1">
+                            <i class="fa-solid fa-info-circle text-[#58a6ff]"></i> Display only · Orders charged in INR
+                        </div>
+                    </div>
+                </div>
+
                 <!-- User Balance Quick Badge -->
-                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs">
-                    <span class="text-[#8b949e] font-medium">Balance:</span>
-                    <span class="font-extrabold text-[#3fb950] text-sm font-mono">₹<span id="header-balance">{{ user.balance }}</span></span>
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0d1117] border border-[#30363d] text-xs" x-data>
+                    <span class="text-[#8b949e] font-medium hidden sm:block">Balance:</span>
+                    <span class="font-extrabold text-[#3fb950] text-sm font-mono">
+                        <span x-text="$store.cur.sym" class="font-sans"></span><span x-text="$store.cur.fmt('{{ user.balance }}')"></span>
+                    </span>
+                    <span x-show="$store.cur.sel !== 'INR'" class="hidden sm:inline font-mono text-[10px] text-[#8b949e]" x-text="'(₹{{ user.balance }})'"></span>
                     {% if user.balance_usdt is defined and user.balance_usdt and user.balance_usdt > 0 %}
-                    <span class="font-extrabold text-[#26a17b] text-xs font-mono ml-1 pl-2 border-l border-[#30363d]">{{ "%.4f"|format(user.balance_usdt|float) }} USDT</span>
+                    <span class="font-extrabold text-[#26a17b] text-xs font-mono hidden sm:inline ml-1 pl-2 border-l border-[#30363d]">{{ "%.4f"|format(user.balance_usdt|float) }} USDT</span>
                     {% endif %}
                 </div>
 
@@ -187,6 +224,53 @@
 </div>
 
 <script>
+    // ── Global Currency Store ─────────────────────────────────────────────────
+    document.addEventListener('alpine:init', () => {
+        const CURRENCIES = [
+            { code: 'INR', sym: '₹',   flag: '🇮🇳', name: 'Indian Rupee',         rate: 1        },
+            { code: 'USD', sym: '$',   flag: '🇺🇸', name: 'US Dollar',            rate: 0.01196  },
+            { code: 'EUR', sym: '€',   flag: '🇪🇺', name: 'Euro',                 rate: 0.01101  },
+            { code: 'GBP', sym: '£',   flag: '🇬🇧', name: 'British Pound',        rate: 0.00923  },
+            { code: 'AED', sym: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham',           rate: 0.04393  },
+            { code: 'SAR', sym: '﷼',  flag: '🇸🇦', name: 'Saudi Riyal',          rate: 0.04487  },
+            { code: 'SGD', sym: 'S$',  flag: '🇸🇬', name: 'Singapore Dollar',     rate: 0.01592  },
+            { code: 'MYR', sym: 'RM',  flag: '🇲🇾', name: 'Malaysian Ringgit',    rate: 0.05256  },
+            { code: 'BDT', sym: '৳',   flag: '🇧🇩', name: 'Bangladeshi Taka',     rate: 1.3116   },
+            { code: 'PKR', sym: '₨',   flag: '🇵🇰', name: 'Pakistani Rupee',      rate: 3.345    },
+            { code: 'NGN', sym: '₦',   flag: '🇳🇬', name: 'Nigerian Naira',       rate: 19.46    },
+            { code: 'PHP', sym: '₱',   flag: '🇵🇭', name: 'Philippine Peso',      rate: 0.6828   },
+            { code: 'IDR', sym: 'Rp',  flag: '🇮🇩', name: 'Indonesian Rupiah',    rate: 193.5    },
+        ];
+        const byCode = Object.fromEntries(CURRENCIES.map(c => [c.code, c]));
+
+        Alpine.store('cur', {
+            list: CURRENCIES,
+            sel:  localStorage.getItem('yoomo_currency') || 'INR',
+            open: false,
+
+            get cur() { return byCode[this.sel] || byCode['INR']; },
+            get sym()  { return this.cur.sym; },
+            get flag() { return this.cur.flag; },
+            get rate() { return this.cur.rate; },
+
+            fmt(inrAmt) {
+                const n = parseFloat(inrAmt) || 0;
+                const v = n * this.rate;
+                const dec = ['IDR','NGN','BDT','PKR'].includes(this.sel) ? 0
+                          : v < 0.01 ? 6 : v < 1 ? 4 : 2;
+                return v.toFixed(dec);
+            },
+
+            set(code) {
+                this.sel = code;
+                this.open = false;
+                localStorage.setItem('yoomo_currency', code);
+                // Dispatch so other components can react
+                window.dispatchEvent(new CustomEvent('currency-changed', { detail: code }));
+            }
+        });
+    });
+
     async function handleLogout() {
         try {
             await fetch('/auth/logout', { method: 'POST' });

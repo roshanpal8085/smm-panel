@@ -173,6 +173,17 @@
         return cost.toFixed(2);
     },
 
+    get totalCostDisplay() {
+        return $store.cur.fmt(this.totalCost);
+    },
+
+    get balanceDisplay() {
+        return $store.cur.fmt(this.userBalance.toFixed(2));
+    },
+
+    get currSym() { return $store.cur.sym; },
+    get currSel() { return $store.cur.sel; },
+
     get hasEnoughBalance() {
         return this.userBalance >= parseFloat(this.totalCost);
     },
@@ -216,10 +227,7 @@
             if (res.ok && data.success) {
                 showToast(`Order #${data.order_id} queued and routed successfully!`, 'success');
                 this.userBalance -= parseFloat(this.totalCost);
-                const bEl = document.getElementById('sidebar-balance');
-                if (bEl) bEl.innerText = this.userBalance.toFixed(2);
-                const hbEl = document.getElementById('header-balance');
-                if (hbEl) hbEl.innerText = this.userBalance.toFixed(2);
+                // sidebar/header balances are Alpine reactive — they update automatically
                 this.link = '';
 
                 setTimeout(() => {
@@ -357,14 +365,19 @@
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-[#8b949e] font-medium">Estimated Charge</span>
                         <div class="text-right">
-                            <span class="text-xl font-bold text-[#3fb950] font-mono">₹<span x-text="totalCost"></span></span>
-                            <span class="text-[10px] text-[#8b949e] font-mono ml-1">INR</span>
+                            <span class="text-xl font-bold text-[#3fb950] font-mono">
+                                <span x-text="currSym" class="font-sans"></span><span x-text="totalCostDisplay"></span>
+                            </span>
+                            <span class="text-[10px] text-[#8b949e] font-mono ml-1" x-text="currSel"></span>
+                            <div x-show="currSel !== 'INR'" class="text-[10px] text-[#8b949e] font-mono">≈ ₹<span x-text="totalCost"></span> INR</div>
                         </div>
                     </div>
 
                     <div class="pt-2 border-t border-[#21262d] flex items-center justify-between text-xs">
                         <span class="text-[#8b949e]">Your Balance:</span>
-                        <span class="font-mono font-bold" :class="hasEnoughBalance ? 'text-[#f0f6fc]' : 'text-[#f85149]'">₹<span x-text="userBalance.toFixed(2)"></span></span>
+                        <span class="font-mono font-bold" :class="hasEnoughBalance ? 'text-[#f0f6fc]' : 'text-[#f85149]'">
+                            <span x-text="currSym" class="font-sans"></span><span x-text="balanceDisplay"></span>
+                        </span>
                     </div>
 
                     <div x-show="!hasEnoughBalance" class="pt-1 flex items-center justify-between text-xs text-[#f85149]">
@@ -398,7 +411,10 @@
                             <div class="grid grid-cols-2 gap-2 pt-1 font-mono">
                                 <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
                                     <span class="block text-[10px] text-[#8b949e] uppercase">Rate / 1K</span>
-                                    <span class="text-sm font-bold text-[#3fb950]">₹<span x-text="selectedService.rate"></span></span>
+                                    <span class="text-sm font-bold text-[#3fb950]">
+                                        <span x-text="currSym" class="font-sans"></span><span x-text="$store.cur.fmt(selectedService.rate)"></span>
+                                    </span>
+                                    <div x-show="currSel !== 'INR'" class="text-[10px] text-[#8b949e]">₹<span x-text="selectedService.rate"></span></div>
                                 </div>
                                 <div class="p-2.5 rounded bg-[#161b22] border border-[#21262d]">
                                     <span class="block text-[10px] text-[#8b949e] uppercase">Type</span>
