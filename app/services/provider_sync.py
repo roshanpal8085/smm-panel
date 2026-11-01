@@ -168,8 +168,64 @@ def import_services_from_provider(
     }
 
 
+def apply_interleaved_sort_order(db: Session) -> int:
+    """
+    Recalculates sort_order across all active providers in an alternating
+    round-robin fashion (1 service from P1, 1 from P2, 1 from P1, 1 from P2...).
+    Whichever provider has more services remaining continues in its original order.
+    """
+    providers = db.scalars(
+        select(ProviderSetting)
+        .where(ProviderSetting.is_active == True)
+        .order_by(
+            (ProviderSetting.slug != "vipsmmpro"),
+            ProviderSetting.id.asc()
+        )
+    ).all()
+
+    real_providers = [p for p in providers if p.slug in ("vipsmmpro", "smmxpert")]
+    if not real_providers:
+        real_providers = [p for p in providers if p.api_key and p.api_url]
+
+    if not real_providers:
+        return 0
+
+    provider_services: list[list[Service]] = []
+    for p in real_providers:
+        try:
+            adapter = build_adapter(p)
+            remote = adapter.get_services()
+            id_to_idx = {int(s.provider_service_id): i for i, s in enumerate(remote)}
+            db_svcs = db.scalars(
+                select(Service).where(Service.provider_name == p.slug)
+            ).all()
+            db_svcs.sort(key=lambda s: id_to_idx.get(s.provider_service_id, 999999))
+            provider_services.append(db_svcs)
+        except Exception as exc:
+            logger.warning("Could not fetch remote order for %s: %s", p.slug, exc)
+            db_svcs = db.scalars(
+                select(Service)
+                .where(Service.provider_name == p.slug)
+                .order_by(Service.sort_order.asc(), Service.id.asc())
+            ).all()
+            provider_services.append(db_svcs)
+
+    current_order = 0
+    max_len = max(len(s_list) for s_list in provider_services) if provider_services else 0
+
+    for i in range(max_len):
+        for s_list in provider_services:
+            if i < len(s_list):
+                svc = s_list[i]
+                svc.sort_order = current_order
+                current_order += 1
+
+    db.commit()
+    return current_order
+
+
 def import_services_from_all_providers(db: Session) -> list[dict]:
-    """Import services from every active provider and return per-provider summaries."""
+    """Import services from every active provider, interleave their order, and return per-provider summaries."""
     active_providers = db.scalars(
         select(ProviderSetting).where(ProviderSetting.is_active == True)  # noqa: E712
     ).all()
@@ -179,4 +235,11 @@ def import_services_from_all_providers(db: Session) -> list[dict]:
             results.append(import_services_from_provider(db, setting))
         except Exception as exc:  # noqa: BLE001
             results.append({"provider": setting.slug, "error": str(exc)})
+
+    # Interleave orders across providers: 1 from P1, 1 from P2, 1 from P1...
+    try:
+        apply_interleaved_sort_order(db)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not apply interleaved sort order: %s", exc)
+
     return results

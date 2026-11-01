@@ -12,6 +12,7 @@ from app.models import CategoryMargin, PriceAuditLog, ProviderSetting, Service, 
 from app.services.provider_sync import (
     import_services_from_all_providers,
     import_services_from_provider,
+    apply_interleaved_sort_order,
 )
 from app.pricing import (
     calculate_gross_profit,
@@ -319,6 +320,10 @@ def sync_services(
             raise HTTPException(status_code=404, detail=f"Active provider '{provider}' not found.")
         try:
             res = import_services_from_provider(db, p_setting)
+            try:
+                apply_interleaved_sort_order(db)
+            except Exception:
+                pass
             sync_setting = db.scalar(select(SystemSetting).where(SystemSetting.key == "last_provider_sync"))
             if sync_setting:
                 sync_setting.value = now.isoformat()
