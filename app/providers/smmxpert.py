@@ -112,18 +112,22 @@ class SmmXpertAdapter(SmmProviderAdapter):
         provider_service_id: str,
         link: str,
         quantity: int,
+        comments: str | None = None,
     ) -> ProviderOrderResult:
         """
         SMMXpert specifies 'url' as the link parameter.
         We send both 'url' and 'link' to ensure complete compatibility.
         """
-        raw = self._post({
+        payload = {
             "action": "add",
             "service": provider_service_id,
             "url": link.strip(),
             "link": link.strip(),
             "quantity": quantity,
-        })
+        }
+        if comments:
+            payload["comments"] = comments
+        raw = self._post(payload)
         if not isinstance(raw, dict):
             raise ProviderError("Invalid order response from SMMXpert", {})
         if "error" in raw:
@@ -220,6 +224,25 @@ class SmmXpertAdapter(SmmProviderAdapter):
             except Exception as e:
                 results[str(oid)] = {"error": str(e)}
         return results
+
+    def get_service_description(self, provider_service_id: str | int) -> str | None:
+        try:
+            base_url = self.config.api_url.rstrip("/").removesuffix("/api/v2")
+            url = f"{base_url}/services/get-service-description/{provider_service_id}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "X-Requested-With": "XMLHttpRequest",
+            }
+            with httpx.Client(timeout=10.0, follow_redirects=True, headers=headers) as client:
+                r = client.get(url)
+                if r.status_code == 200:
+                    data = r.json()
+                    desc = data.get("description")
+                    if desc and isinstance(desc, str) and desc.strip():
+                        return desc.strip()
+        except Exception:
+            pass
+        return None
 
     @staticmethod
     def _parse_status(pid: str, data: dict) -> ProviderOrderStatus:

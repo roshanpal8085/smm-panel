@@ -113,7 +113,9 @@ def run_migrations():
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS customer_visible BOOLEAN DEFAULT TRUE;",
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS manual_markup_percent NUMERIC(8, 2);",
             "ALTER TABLE services ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMP;",
+            "ALTER TABLE services ADD COLUMN IF NOT EXISTS description TEXT;",
             # Order financial snapshot
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS comments TEXT;",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_rate NUMERIC(12, 4);",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS snapshot_provider_rate NUMERIC(12, 4);",
             "ALTER TABLE orders ADD COLUMN IF NOT EXISTS gross_profit NUMERIC(12, 4);",

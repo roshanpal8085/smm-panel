@@ -13,6 +13,8 @@ from app.services.provider_sync import (
     import_services_from_all_providers,
     import_services_from_provider,
     apply_interleaved_sort_order,
+    fetch_and_cache_service_description,
+    sync_service_descriptions_batch,
 )
 from app.pricing import (
     calculate_gross_profit,
@@ -115,6 +117,7 @@ def get_services(
                 "max": s.max_quantity,
                 "refill": s.refill_available,
                 "cancel": s.cancel_available,
+                "description": s.description,
                 "is_active": s.is_active,
                 "provider_available": s.provider_available,
                 "customer_visible": s.customer_visible,
@@ -163,6 +166,10 @@ def get_service_details(
     if not service or not service.is_active or not service.customer_visible:
         raise HTTPException(status_code=404, detail="Service not found or unavailable")
 
+    desc = service.description
+    if not desc:
+        desc = fetch_and_cache_service_description(db, service)
+
     return {
         "success": True,
         "service": {
@@ -176,9 +183,30 @@ def get_service_details(
             "max": service.max_quantity,
             "refill": service.refill_available,
             "cancel": service.cancel_available,
+            "description": desc,
             "is_active": service.is_active,
             "provider_available": service.provider_available,
         }
+    }
+
+
+@router.get("/{service_id:int}/description")
+def get_service_description_route(
+    service_id: int,
+    db: Session = Depends(get_db)
+):
+    service = db.get(Service, service_id)
+    if not service or not service.is_active or not service.customer_visible:
+        raise HTTPException(status_code=404, detail="Service not found or unavailable")
+
+    desc = service.description
+    if not desc:
+        desc = fetch_and_cache_service_description(db, service)
+
+    return {
+        "success": True,
+        "service_id": service.id,
+        "description": desc or ""
     }
 
 
@@ -701,4 +729,19 @@ def get_price_audit_logs(
             }
             for l in logs
         ]
+    }
+
+
+@router.post("/admin/sync-descriptions")
+def admin_sync_descriptions(
+    limit: int = Query(100, ge=1, le=1000),
+    provider: Optional[str] = Query(None),
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    result = sync_service_descriptions_batch(db, limit=limit, provider_slug=provider)
+    return {
+        "success": True,
+        "result": result,
+        "message": f"Successfully updated {result['updated']} descriptions out of {result['total']} processed."
     }

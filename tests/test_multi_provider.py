@@ -61,7 +61,14 @@ class MockSmmAdapter(SmmProviderAdapter):
     def get_balance(self) -> Decimal:
         return Decimal("150.75")
 
-    def add_order(self, provider_service_id: str, link: str, quantity: int) -> ProviderOrderResult:
+    def add_order(
+        self,
+        provider_service_id: str,
+        link: str,
+        quantity: int,
+        comments: str | None = None,
+        **kwargs
+    ) -> ProviderOrderResult:
         if provider_service_id == "fail_order":
             raise ProviderError("Service unavailable at provider")
         return ProviderOrderResult(

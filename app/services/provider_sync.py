@@ -104,6 +104,8 @@ def import_services_from_provider(
                 # Only recalculate if no manual price_override
                 if existing.price_override is None:
                     existing.selling_rate = selling_rate
+                if getattr(svc, "description", None):
+                    existing.description = svc.description
                 existing.min_quantity = svc.min_quantity
                 existing.max_quantity = svc.max_quantity
                 existing.refill_available = svc.refill
@@ -120,6 +122,7 @@ def import_services_from_provider(
                     service_type=svc.service_type,
                     provider_rate=svc.rate,
                     selling_rate=selling_rate,
+                    description=getattr(svc, "description", None),
                     min_quantity=svc.min_quantity,
                     max_quantity=svc.max_quantity,
                     refill_available=svc.refill,
@@ -243,3 +246,101 @@ def import_services_from_all_providers(db: Session) -> list[dict]:
         logger.warning("Could not apply interleaved sort order: %s", exc)
 
     return results
+
+
+def fetch_and_cache_service_description(db: Session, service: Service) -> str | None:
+    """
+    Returns the cached service description or fetches it on-demand from the upstream provider.
+    """
+    if service.description and service.description.strip():
+        return service.description.strip()
+
+    slug = service.provider_name or "vipsmmpro"
+    provider_setting = db.scalar(
+        select(ProviderSetting).where(
+            ProviderSetting.slug == slug,
+            ProviderSetting.is_active == True,
+        )
+    )
+    if not provider_setting:
+        # Fallback to default or any active provider setting
+        provider_setting = db.scalar(
+            select(ProviderSetting).where(ProviderSetting.is_active == True)
+        )
+    if not provider_setting:
+        return None
+
+    try:
+        adapter = build_adapter(provider_setting)
+        desc = adapter.get_service_description(service.provider_service_id)
+        if desc and isinstance(desc, str) and desc.strip():
+            service.description = desc.strip()
+            db.commit()
+            return service.description
+    except Exception as exc:
+        logger.warning(
+            "Failed fetching on-demand description for svc %s from %s: %s",
+            service.id,
+            slug,
+            exc,
+        )
+    return None
+
+
+def sync_service_descriptions_batch(
+    db: Session,
+    limit: int = 100,
+    provider_slug: str | None = None,
+) -> dict:
+    """
+    Sync descriptions for active services that do not yet have one stored in DB.
+    """
+    stmt = (
+        select(Service)
+        .where(
+            Service.is_active == True,
+            Service.customer_visible == True,
+            (Service.description == None) | (Service.description == ""),
+        )
+        .order_by(Service.sort_order.asc(), Service.id.asc())
+    )
+    if provider_slug:
+        stmt = stmt.where(Service.provider_name == provider_slug)
+    if limit > 0:
+        stmt = stmt.limit(limit)
+
+    services_to_sync = db.scalars(stmt).all()
+    if not services_to_sync:
+        return {"updated": 0, "total": 0}
+
+    provider_cache: dict[str, Any] = {}
+    updated = 0
+
+    for svc in services_to_sync:
+        slug = svc.provider_name or "vipsmmpro"
+        if slug not in provider_cache:
+            pset = db.scalar(
+                select(ProviderSetting).where(
+                    ProviderSetting.slug == slug,
+                    ProviderSetting.is_active == True,
+                )
+            )
+            provider_cache[slug] = build_adapter(pset) if pset else None
+
+        adapter = provider_cache.get(slug)
+        if not adapter:
+            continue
+
+        try:
+            desc = adapter.get_service_description(svc.provider_service_id)
+            if desc and isinstance(desc, str) and desc.strip():
+                svc.description = desc.strip()
+                updated += 1
+        except Exception as exc:
+            logger.debug("Error fetching desc for svc %s: %s", svc.id, exc)
+
+    if updated > 0:
+        db.commit()
+
+    return {"updated": updated, "total": len(services_to_sync)}
+

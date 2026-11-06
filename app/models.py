@@ -232,6 +232,11 @@ class Service(Base):
         nullable=True
     )
 
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         default=datetime.utcnow,
@@ -279,6 +284,11 @@ class Order(Base):
     quantity: Mapped[int] = mapped_column(
         Integer,
         nullable=False
+    )
+
+    comments: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True
     )
 
     charge: Mapped[Decimal] = mapped_column(

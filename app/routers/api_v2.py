@@ -84,6 +84,11 @@ async def reseller_api_v2_handler(
         service_id = params.get("service")
         link = params.get("link")
         quantity = params.get("quantity")
+        comments = params.get("comments")
+
+        if comments and not quantity:
+            # If comments provided without quantity, calculate from lines
+            quantity = len([l for l in str(comments).split("\n") if l.strip()])
 
         if not service_id or not link or not quantity:
             return {"error": "service, link, and quantity parameters are required"}
@@ -100,7 +105,8 @@ async def reseller_api_v2_handler(
                 link=link,
                 quantity=quantity,
                 current_user=user,
-                db=db
+                db=db,
+                comments=str(comments) if comments else None,
             )
             return {"order": order_res["order_id"]}
         except HTTPException as he:

@@ -29,6 +29,7 @@ class CreateOrderRequest(BaseModel):
     service_id: int
     link: str = Field(min_length=1)
     quantity: int = Field(gt=0)
+    comments: Optional[str] = None
 
 
 class MassOrderRequest(BaseModel):
@@ -43,7 +44,8 @@ def execute_single_order(
     link: str,
     quantity: int,
     current_user: User,
-    db: Session
+    db: Session,
+    comments: Optional[str] = None,
 ) -> dict:
     service = db.scalar(
         select(Service).where(
@@ -161,11 +163,23 @@ def execute_single_order(
 
     # 3. Provider API request
     try:
-        order_result = adapter.add_order(
-            provider_service_id=str(service.provider_service_id),
-            link=link.strip(),
-            quantity=quantity,
-        )
+        try:
+            order_result = adapter.add_order(
+                provider_service_id=str(service.provider_service_id),
+                link=link.strip(),
+                quantity=quantity,
+                comments=comments.strip() if comments else None,
+            )
+        except TypeError as te:
+            # Fallback for adapters implementing the legacy 3-parameter signature
+            if "comments" in str(te):
+                order_result = adapter.add_order(
+                    provider_service_id=str(service.provider_service_id),
+                    link=link.strip(),
+                    quantity=quantity,
+                )
+            else:
+                raise te
     except ProviderError as error:
         try:
             credit_wallet(
@@ -213,6 +227,7 @@ def execute_single_order(
         provider_order_id=int(provider_order_id_str) if provider_order_id_str.isdigit() else None,
         link=link.strip(),
         quantity=quantity,
+        comments=comments.strip() if comments else None,
         charge=charge,
         provider_charge=estimated_provider_cost,
         snapshot_rate=service.selling_rate,
@@ -250,7 +265,8 @@ def create_order(
         link=data.link,
         quantity=data.quantity,
         current_user=current_user,
-        db=db
+        db=db,
+        comments=data.comments,
     )
 
 
@@ -370,6 +386,7 @@ def list_orders(
                 "service_name": o.service.name if o.service else "Service",
                 "link": o.link,
                 "quantity": o.quantity,
+                "comments": o.comments,
                 "charge": str(o.charge),
                 "start_count": o.start_count,
                 "remains": o.remains,

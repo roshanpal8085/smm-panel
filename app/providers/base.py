@@ -33,6 +33,7 @@ class ProviderService:
     max_quantity: int
     refill: bool = False
     cancel: bool = False
+    description: str | None = None
 
 
 @dataclass
@@ -77,6 +78,7 @@ class SmmProviderAdapter(ABC):
         provider_service_id: str,
         link: str,
         quantity: int,
+        comments: str | None = None,
     ) -> ProviderOrderResult:
         """Submit a new order. Raises ProviderError on failure."""
 
@@ -103,6 +105,10 @@ class SmmProviderAdapter(ABC):
         self, provider_order_ids: list[str]
     ) -> dict[str, Any]:
         """Cancel one or more orders. Returns raw provider response."""
+
+    def get_service_description(self, provider_service_id: str | int) -> str | None:
+        """Fetch description for a specific service from provider website/API if available."""
+        return None
 
 
 class ProviderError(Exception):

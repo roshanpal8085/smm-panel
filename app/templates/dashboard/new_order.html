@@ -10,6 +10,7 @@
     selectedServiceId: '',
     selectedService: null,
     link: '',
+    comments: '',
     quantity: 1000,
     userBalance: parseFloat('{{ user.balance }}'),
     loading: true,
@@ -18,6 +19,7 @@
     successMessage: '',
     searchQuery: '',
     selectedPlatform: 'all',
+    descLoading: false,
 
     platforms: [
         { id: 'all', name: 'All', icon: 'fa-solid fa-layer-group', colorClass: 'text-[#8b949e]', activeColor: 'text-[#58a6ff]', keywords: [] },
@@ -122,6 +124,7 @@
                         this.selectedServiceId = found.id;
                         this.selectedService = found;
                         this.quantity = found.min;
+                        this.fetchDescription(this.selectedService);
                     }
                 }
 
@@ -154,16 +157,80 @@
             this.selectedServiceId = available[0].id;
             this.selectedService = available[0];
             this.quantity = this.selectedService.min;
+            this.fetchDescription(this.selectedService);
         } else {
             this.selectedService = null;
+        }
+    },
+
+    get isCustomComments() {
+        if (!this.selectedService) return false;
+        const type = (this.selectedService.service_type || '').toLowerCase();
+        const name = (this.selectedService.name || '').toLowerCase();
+        const cat = (this.selectedService.category || '').toLowerCase();
+
+        if (type.includes('comment') || type.includes('custom') || type.includes('mention') || type.includes('review')) {
+            if (type === 'comment likes') return false;
+            return true;
+        }
+        if (name.includes('custom comment') || name.includes('custom review') || name.includes('custom text') || name.includes('custom keyword') || name.includes('reviews (custom)') || name.includes('custom reviews')) {
+            if (name.includes('comment likes') || name.includes('comments likes') || name.includes('comment like')) return false;
+            return true;
+        }
+        if (cat.includes('custom comment') || cat.includes('custom review') || cat.includes('custom text')) {
+            return true;
+        }
+        return false;
+    },
+
+    get commentsCount() {
+        if (!this.comments) return 0;
+        return this.comments.split('\n').filter(l => l.trim().length > 0).length;
+    },
+
+    onCommentsInput() {
+        if (this.isCustomComments) {
+            const count = this.commentsCount;
+            this.quantity = count > 0 ? count : (this.selectedService ? this.selectedService.min : 1);
         }
     },
 
     onServiceChange() {
         this.selectedService = this.services.find(s => s.id == this.selectedServiceId) || null;
         if (this.selectedService) {
-            this.quantity = this.selectedService.min;
+            if (this.isCustomComments && this.commentsCount > 0) {
+                this.quantity = this.commentsCount;
+            } else {
+                this.quantity = this.selectedService.min;
+            }
+            this.fetchDescription(this.selectedService);
         }
+    },
+
+    async fetchDescription(svc) {
+        if (!svc) return;
+        if (svc.description && svc.description.trim()) return;
+        this.descLoading = true;
+        try {
+            const res = await fetch('/services/' + svc.id + '/description');
+            const data = await res.json();
+            if (data.success && data.description) {
+                svc.description = data.description;
+            }
+        } catch(e) {
+            console.error('Error fetching service description:', e);
+        } finally {
+            this.descLoading = false;
+        }
+    },
+
+    get formattedDescription() {
+        if (!this.selectedService || !this.selectedService.description) return '';
+        let d = this.selectedService.description.trim();
+        if (!d.includes('<br') && !d.includes('<p>') && !d.includes('<div>')) {
+            d = d.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        }
+        return d;
     },
 
     get totalCost() {
@@ -189,19 +256,39 @@
     },
 
     async submitOrder() {
-        if (!this.selectedServiceId || !this.link || !this.quantity) {
+        if (!this.selectedServiceId || !this.link) {
             this.error = 'Please fill in all order fields.';
             return;
         }
 
-        if (this.quantity < this.selectedService.min) {
-            this.error = `Minimum order quantity is ${this.selectedService.min}`;
-            return;
-        }
-
-        if (this.quantity > this.selectedService.max) {
-            this.error = `Maximum order quantity is ${this.selectedService.max}`;
-            return;
+        if (this.isCustomComments) {
+            if (!this.comments || !this.comments.trim()) {
+                this.error = 'Please type comments / reviews (one per line).';
+                return;
+            }
+            const count = this.commentsCount;
+            if (count < this.selectedService.min) {
+                this.error = `Minimum required is ${this.selectedService.min} comments/reviews (you entered ${count}).`;
+                return;
+            }
+            if (count > this.selectedService.max) {
+                this.error = `Maximum allowed is ${this.selectedService.max} comments/reviews (you entered ${count}).`;
+                return;
+            }
+            this.quantity = count;
+        } else {
+            if (!this.quantity) {
+                this.error = 'Please enter order quantity.';
+                return;
+            }
+            if (this.quantity < this.selectedService.min) {
+                this.error = `Minimum order quantity is ${this.selectedService.min}`;
+                return;
+            }
+            if (this.quantity > this.selectedService.max) {
+                this.error = `Maximum order quantity is ${this.selectedService.max}`;
+                return;
+            }
         }
 
         if (!this.hasEnoughBalance) {
@@ -219,7 +306,8 @@
                 body: JSON.stringify({
                     service_id: parseInt(this.selectedServiceId),
                     link: this.link,
-                    quantity: parseInt(this.quantity)
+                    quantity: parseInt(this.quantity),
+                    comments: this.isCustomComments ? this.comments : null
                 })
             });
 
@@ -229,6 +317,7 @@
                 this.userBalance -= parseFloat(this.totalCost);
                 // sidebar/header balances are Alpine reactive — they update automatically
                 this.link = '';
+                this.comments = '';
 
                 setTimeout(() => {
                     window.location.href = '/orders-history';
@@ -348,6 +437,32 @@
                     <span class="block text-[11px] text-[#8b949e] mt-1">Ensure the social profile or media link is public.</span>
                 </div>
 
+                <!-- Custom Comments / Reviews Textarea -->
+                <div x-show="isCustomComments" x-cloak class="space-y-1.5 p-3.5 rounded-md bg-[#161b22] border border-[#30363d]">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-[#f0f6fc] flex items-center gap-1.5">
+                            <i class="fa-solid fa-comments text-[#58a6ff]"></i>
+                            <span>Comments / Reviews</span>
+                            <span class="text-[10px] text-[#8b949e] font-normal font-sans">(1 per line)</span>
+                        </label>
+                        <span class="text-xs font-mono font-bold text-[#3fb950] flex items-center gap-1">
+                            <span class="text-[10px] text-[#8b949e] font-sans font-normal">Count:</span>
+                            <span x-text="commentsCount"></span>
+                        </span>
+                    </div>
+                    <textarea 
+                        x-model="comments" 
+                        @input="onCommentsInput()" 
+                        rows="5" 
+                        placeholder="Type one comment or review per line:&#10;Great service! Highly recommended!&#10;Loved the quality and speed!&#10;Will definitely order again!" 
+                        class="gh-input font-mono text-xs py-2 leading-relaxed"
+                    ></textarea>
+                    <div class="flex items-center justify-between text-[11px] text-[#8b949e]">
+                        <span>Quantity will auto-update with the number of lines.</span>
+                        <span x-show="selectedService">Min: <strong class="text-[#f0f6fc]" x-text="selectedService ? selectedService.min : ''"></strong> · Max: <strong class="text-[#f0f6fc]" x-text="selectedService ? selectedService.max : ''"></strong></span>
+                    </div>
+                </div>
+
                 <!-- Quantity -->
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
@@ -357,7 +472,10 @@
                             Max: <strong class="text-[#f0f6fc]" x-text="selectedService ? selectedService.max : ''"></strong>
                         </span>
                     </div>
-                    <input type="number" x-model.number="quantity" :min="selectedService ? selectedService.min : 1" :max="selectedService ? selectedService.max : 1000000" required class="gh-input font-mono text-xs py-2">
+                    <input type="number" x-model.number="quantity" :readonly="isCustomComments" :min="selectedService ? selectedService.min : 1" :max="selectedService ? selectedService.max : 1000000" required class="gh-input font-mono text-xs py-2" :class="isCustomComments ? 'opacity-80 bg-[#161b22] cursor-not-allowed' : ''">
+                    <span x-show="isCustomComments" class="block text-[11px] text-[#58a6ff] mt-1">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Quantity is auto-calculated from the number of lines in your comments/reviews box above.
+                    </span>
                 </div>
 
                 <!-- Price Summary Box -->
@@ -422,7 +540,10 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 pt-1">
+                            <div class="flex items-center gap-2 pt-1 flex-wrap">
+                                <span x-show="isCustomComments" class="gh-badge-merged text-[11px]">
+                                    <i class="fa-solid fa-comments"></i> Custom Comments / Reviews
+                                </span>
                                 <span x-show="selectedService.refill" class="gh-badge-open text-[11px]">
                                     <i class="fa-solid fa-shield-check"></i> Refill
                                 </span>
@@ -431,10 +552,31 @@
                                 </span>
                             </div>
 
-                            <div class="pt-2 border-t border-[#21262d] text-[11px] text-[#8b949e] space-y-1">
-                                <p><strong class="text-[#c9d1d9]">Speed:</strong> 5,000 to 50,000 / Day</p>
-                                <p><strong class="text-[#c9d1d9]">Start Time:</strong> 0 - 60 Minutes</p>
-                                <p><strong class="text-[#c9d1d9]">Quality:</strong> Verified High Retention</p>
+                            <!-- Service Description & Instructions -->
+                            <div class="pt-2 border-t border-[#21262d] space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="block text-[11px] text-[#8b949e] uppercase font-semibold flex items-center gap-1.5">
+                                        <i class="fa-solid fa-align-left text-[#58a6ff]"></i> Description & Details
+                                    </span>
+                                    <span x-show="descLoading" class="text-[10px] text-[#8b949e] font-mono">
+                                        <i class="fa-solid fa-spinner fa-spin mr-1 text-[#58a6ff]"></i> Loading...
+                                    </span>
+                                </div>
+                                <div x-show="descLoading && (!selectedService.description || !selectedService.description.trim())" 
+                                     class="p-3 rounded-lg bg-[#0d1117] border border-[#21262d] text-center text-[#8b949e] text-xs">
+                                    <i class="fa-solid fa-spinner fa-spin text-sm text-[#58a6ff] mb-1"></i>
+                                    <p>Fetching provider specifications...</p>
+                                </div>
+                                <div x-show="selectedService.description && selectedService.description.trim()" 
+                                     class="p-3 rounded-lg bg-[#0d1117] border border-[#21262d] text-xs text-[#c9d1d9] leading-relaxed max-h-64 overflow-y-auto select-text font-sans break-words" 
+                                     x-html="formattedDescription">
+                                </div>
+                                <div x-show="!descLoading && (!selectedService.description || !selectedService.description.trim())" 
+                                     class="pt-1 text-[11px] text-[#8b949e] space-y-1">
+                                    <p><strong class="text-[#c9d1d9]">Speed:</strong> 5,000 to 50,000 / Day</p>
+                                    <p><strong class="text-[#c9d1d9]">Start Time:</strong> Instant to 60 Minutes</p>
+                                    <p><strong class="text-[#c9d1d9]">Quality:</strong> Verified High Retention</p>
+                                </div>
                             </div>
                         </div>
                     </template>
