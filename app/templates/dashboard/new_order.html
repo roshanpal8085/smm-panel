@@ -504,34 +504,6 @@
                     </div>
                 </div>
 
-                <!-- Service Description Box (above Submit) -->
-                <div x-show="selectedService" x-cloak class="rounded-md bg-[#161b22] border border-[#30363d] overflow-hidden">
-                    <div class="flex items-center justify-between px-3 py-2 border-b border-[#21262d]">
-                        <span class="text-[11px] text-[#8b949e] uppercase font-semibold flex items-center gap-1.5">
-                            <i class="fa-solid fa-align-left text-[#58a6ff]"></i> Description &amp; Details
-                        </span>
-                        <span x-show="descLoading" class="text-[10px] text-[#8b949e] font-mono">
-                            <i class="fa-solid fa-spinner fa-spin mr-1 text-[#58a6ff]"></i> Loading...
-                        </span>
-                    </div>
-                    <div class="p-3">
-                        <div x-show="descLoading && (!selectedService.description || !selectedService.description.trim())"
-                             class="text-center text-[#8b949e] text-xs py-2">
-                            <i class="fa-solid fa-spinner fa-spin text-sm text-[#58a6ff] mr-1"></i> Fetching provider specifications...
-                        </div>
-                        <div x-show="selectedService && selectedService.description && selectedService.description.trim()"
-                             class="text-xs text-[#c9d1d9] leading-relaxed max-h-40 overflow-y-auto select-text font-sans break-words"
-                             x-html="formattedDescription">
-                        </div>
-                        <div x-show="!descLoading && (!selectedService.description || !selectedService.description.trim())"
-                             class="text-[11px] text-[#8b949e] space-y-1">
-                            <p><strong class="text-[#c9d1d9]">Speed:</strong> 5,000 to 50,000 / Day</p>
-                            <p><strong class="text-[#c9d1d9]">Start Time:</strong> Instant to 60 Minutes</p>
-                            <p><strong class="text-[#c9d1d9]">Quality:</strong> Verified High Retention</p>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Submit Button -->
                 <button type="submit" :disabled="submitting || !hasEnoughBalance" class="gh-btn-primary w-full py-2.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
                     <span x-show="!submitting"><i class="fa-solid fa-paper-plane mr-1"></i> Submit Order</span>
@@ -580,6 +552,32 @@
                                 </span>
                             </div>
 
+                            <!-- Service Description & Instructions -->
+                            <div class="pt-2 border-t border-[#21262d] space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="block text-[11px] text-[#8b949e] uppercase font-semibold flex items-center gap-1.5">
+                                        <i class="fa-solid fa-align-left text-[#58a6ff]"></i> Description & Details
+                                    </span>
+                                    <span x-show="descLoading" class="text-[10px] text-[#8b949e] font-mono">
+                                        <i class="fa-solid fa-spinner fa-spin mr-1 text-[#58a6ff]"></i> Loading...
+                                    </span>
+                                </div>
+                                <div x-show="descLoading && (!selectedService.description || !selectedService.description.trim())" 
+                                     class="p-3 rounded-lg bg-[#0d1117] border border-[#21262d] text-center text-[#8b949e] text-xs">
+                                    <i class="fa-solid fa-spinner fa-spin text-sm text-[#58a6ff] mb-1"></i>
+                                    <p>Fetching provider specifications...</p>
+                                </div>
+                                <div x-show="selectedService.description && selectedService.description.trim()" 
+                                     class="p-3 rounded-lg bg-[#0d1117] border border-[#21262d] text-xs text-[#c9d1d9] leading-relaxed max-h-64 overflow-y-auto select-text font-sans break-words" 
+                                     x-html="formattedDescription">
+                                </div>
+                                <div x-show="!descLoading && (!selectedService.description || !selectedService.description.trim())" 
+                                     class="pt-1 text-[11px] text-[#8b949e] space-y-1">
+                                    <p><strong class="text-[#c9d1d9]">Speed:</strong> 5,000 to 50,000 / Day</p>
+                                    <p><strong class="text-[#c9d1d9]">Start Time:</strong> Instant to 60 Minutes</p>
+                                    <p><strong class="text-[#c9d1d9]">Quality:</strong> Verified High Retention</p>
+                                </div>
+                            </div>
                         </div>
                     </template>
 
