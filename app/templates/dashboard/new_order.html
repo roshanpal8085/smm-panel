@@ -199,6 +199,43 @@
         return false;
     },
 
+    get averageTime() {
+        if (!this.selectedService) return null;
+        const name = (this.selectedService.name || '').toLowerCase();
+
+        // Instant delivery patterns
+        if (name.includes('instant') || name.includes('0-5 min') || name.includes('0-1 min')) {
+            return 'Instant';
+        }
+        // Extract minute ranges like "0-30 min", "15-30 min", "30-60 minutes"
+        const minMatch = name.match(/(\d+)\s*[-–]\s*(\d+)\s*min/i);
+        if (minMatch) return `${minMatch[1]}–${minMatch[2]} minutes`;
+
+        // Single minute value like "60 min", "30 minutes"
+        const singleMin = name.match(/(\d+)\s*min/i);
+        if (singleMin) return `${singleMin[1]} minutes`;
+
+        // Hour patterns like "0-1 hour", "1-2 hours", "1 hour"
+        const hrMatch = name.match(/(\d+)\s*[-–]\s*(\d+)\s*hour/i);
+        if (hrMatch) return `${hrMatch[1]}–${hrMatch[2]} hours`;
+        const singleHr = name.match(/(\d+)\s*hour/i);
+        if (singleHr) return `${singleHr[1]} hour${singleHr[1] > 1 ? 's' : ''}`;
+
+        // Day patterns like "1-3 days", "24 hours"
+        if (name.includes('24 hour') || name.includes('24h')) return '24 hours';
+        const dayMatch = name.match(/(\d+)\s*[-–]\s*(\d+)\s*day/i);
+        if (dayMatch) return `${dayMatch[1]}–${dayMatch[2]} days`;
+        const singleDay = name.match(/(\d+)\s*day/i);
+        if (singleDay && parseInt(singleDay[1]) <= 30) return `${singleDay[1]} day${singleDay[1] > 1 ? 's' : ''}`;
+
+        // Speed hints in name
+        if (name.includes('super fast') || name.includes('superfast')) return 'Very Fast';
+        if (name.includes('fast') || name.includes('express')) return 'Fast';
+        if (name.includes('slow') || name.includes('gradual')) return 'Gradual (Slow)';
+
+        return null;
+    },
+
     get commentsCount() {
         if (!this.comments) return 0;
         return this.comments.split('\n').filter(l => l.trim().length > 0).length;
@@ -492,6 +529,16 @@
                     <span x-show="isCustomComments" class="block text-[11px] text-[#58a6ff] mt-1">
                         <i class="fa-solid fa-circle-info mr-1"></i> Quantity is auto-calculated from the number of lines in your comments/reviews box above.
                     </span>
+                </div>
+
+                <!-- Average Time (auto-detected from service name) -->
+                <div x-show="selectedService && averageTime" x-cloak>
+                    <label class="block text-xs font-semibold text-[#f0f6fc] mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock text-[#8b949e]"></i> Average time
+                        <span class="text-[10px] text-[#8b949e] font-normal font-sans">(estimated start)</span>
+                    </label>
+                    <input type="text" readonly :value="averageTime"
+                           class="gh-input font-mono text-xs py-2 opacity-90 bg-[#161b22] cursor-default text-[#58a6ff] font-semibold">
                 </div>
 
                 <!-- Price Summary Box -->
