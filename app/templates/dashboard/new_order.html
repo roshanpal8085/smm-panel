@@ -167,17 +167,33 @@
         if (!this.selectedService) return false;
         const type = (this.selectedService.service_type || '').toLowerCase();
         const name = (this.selectedService.name || '').toLowerCase();
-        const cat = (this.selectedService.category || '').toLowerCase();
+        const cat  = (this.selectedService.category || '').toLowerCase();
 
-        if (type.includes('comment') || type.includes('custom') || type.includes('mention') || type.includes('review')) {
-            if (type === 'comment likes') return false;
+        // --- Explicit exclusions (these are NOT custom-comment services) ---
+        if (type === 'comment likes') return false;
+        const isExcluded = name.includes('comment like') || name.includes('comment likes')
+            || name.includes('custom keyword') || name.includes('custom referral')
+            || name.includes('custom traffic') || name.includes('[organic]');
+        if (isExcluded) return false;
+
+        // --- service_type check ---
+        if (type.includes('comment') || type.includes('custom') ||
+            type.includes('mention') || type.includes('review')) {
             return true;
         }
-        if (name.includes('custom comment') || name.includes('custom review') || name.includes('custom text') || name.includes('custom keyword') || name.includes('reviews (custom)') || name.includes('custom reviews')) {
-            if (name.includes('comment likes') || name.includes('comments likes') || name.includes('comment like')) return false;
-            return true;
-        }
-        if (cat.includes('custom comment') || cat.includes('custom review') || cat.includes('custom text')) {
+
+        // --- name check (broad — covers misspellings providers use) ---
+        const commentNamePatterns = [
+            'custom comment', 'custom review', 'custom text',
+            'reviews (custom)', 'custom reviews',
+            '[ custom ]', '[custom]', '[ costum ]', '[costum]',
+            'costume', 'costum',   // common provider typos
+        ];
+        if (commentNamePatterns.some(p => name.includes(p))) return true;
+
+        // --- category check ---
+        if (cat.includes('custom comment') || cat.includes('custom review') ||
+            cat.includes('custom text')) {
             return true;
         }
         return false;
