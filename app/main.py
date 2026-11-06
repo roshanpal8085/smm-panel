@@ -87,10 +87,18 @@ async def lifespan(app: FastAPI):
             try:
                 from app.database import SessionLocal
                 from app.models import Service
-                from app.services.provider_sync import import_services_from_all_providers
+                from app.services.provider_sync import (
+                    deduplicate_services,
+                    import_services_from_all_providers,
+                )
                 from sqlalchemy import func, select
                 with SessionLocal() as db:
-                    count = db.scalar(select(func.count(Service.id))) or 0
+                    # Always run deduplication on startup to clean up any stale duplicates
+                    deduped = deduplicate_services(db)
+                    if deduped:
+                        print(f"Startup dedup: deactivated {deduped} duplicate service rows")
+
+                    count = db.scalar(select(func.count(Service.id)).where(Service.is_active == True)) or 0
                     if count == 0:
                         print("Services table empty on startup; importing catalogue from active providers...")
                         results = import_services_from_all_providers(db)

@@ -10,8 +10,9 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import ProviderSetting, ProviderSyncLog, Service
@@ -20,6 +21,67 @@ from app.providers.base import ProviderError
 from app.providers.registry import build_adapter
 
 logger = logging.getLogger(__name__)
+
+
+def deduplicate_services(db: Session, provider_slug: str | None = None) -> int:
+    """
+    Remove duplicate services sharing the same (provider_name, provider_service_id).
+
+    For each duplicate group, the row with the **lowest id** is kept.  The
+    others are marked ``is_active=False, customer_visible=False`` so they
+    disappear from the storefront without losing order history FK integrity.
+
+    Args:
+        db: SQLAlchemy session.
+        provider_slug: If given, only deduplicate services for this provider.
+            Pass ``None`` to deduplicate across all providers.
+
+    Returns:
+        Number of duplicate rows deactivated.
+    """
+    # Step 1 – find (provider_name, provider_service_id) combos with > 1 row
+    dup_subq = (
+        select(
+            Service.provider_name,
+            Service.provider_service_id,
+            func.min(Service.id).label("keep_id"),
+            func.count(Service.id).label("cnt"),
+        )
+        .group_by(Service.provider_name, Service.provider_service_id)
+        .having(func.count(Service.id) > 1)
+    )
+    if provider_slug:
+        dup_subq = dup_subq.where(Service.provider_name == provider_slug)
+
+    dup_groups = db.execute(dup_subq).all()
+
+    if not dup_groups:
+        return 0
+
+    deactivated = 0
+    for row in dup_groups:
+        pname, psid, keep_id, cnt = row
+        # Fetch all rows in this duplicate group except the keeper
+        dupes = db.scalars(
+            select(Service).where(
+                Service.provider_name == pname,
+                Service.provider_service_id == psid,
+                Service.id != keep_id,
+            )
+        ).all()
+        for dup in dupes:
+            dup.is_active = False
+            dup.customer_visible = False
+            deactivated += 1
+
+    db.commit()
+    if deactivated:
+        logger.info(
+            "Deduplicated %d duplicate service rows%s",
+            deactivated,
+            f" for provider={provider_slug}" if provider_slug else "",
+        )
+    return deactivated
 
 
 def import_services_from_provider(
@@ -46,6 +108,9 @@ def import_services_from_provider(
     """
     adapter = build_adapter(provider_setting)
     slug = provider_setting.slug
+
+    # Guard: clean up any pre-existing duplicates for this provider
+    deduplicate_services(db, provider_slug=slug)
 
     try:
         remote_services = adapter.get_services()
